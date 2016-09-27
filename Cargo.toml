@@ -2,8 +2,8 @@
 authors = ["Andre Bogus <bogusandre@gmail.de>", "Joshua Landau"]
 description = "count occurrences of a byte in a byte slice, fast"
 name = "bytecount"
-version = "0.1.0"
-license = "Apache 2/MIT"
+version = "0.1.1"
+license = "Apache-2.0/MIT"
 
 [dev-dependencies]
 quickcheck = "0.3.1"
