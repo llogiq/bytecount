@@ -29,3 +29,6 @@ fn main() {
     ..
 }
 ```
+
+The algorithm is explained in depth
+[here](https://llogiq.github.io/2016/09/27/count.html).
