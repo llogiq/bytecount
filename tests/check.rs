@@ -24,3 +24,10 @@ fn check_some() {
     let needle = 68;
     assert_eq!(count(&haystack, needle), naive_count(&haystack, needle));
 }
+
+#[test]
+fn check_overflow() {
+    let haystack = vec![0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    let needle = 2;
+    assert_eq!(count(&haystack[0..], needle), naive_count(&haystack[0..], needle));
+}

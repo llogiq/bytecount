@@ -26,7 +26,8 @@ unsafe fn next_4(ptr: &mut *const usize, needles: usize) -> [usize; 4] {
 }
 
 fn mask_zero(x: usize, needles: usize) -> usize {
-    (((x ^ needles).wrapping_sub(LO)) & !x & HI) >> 7
+    let x = x ^ needles;
+    !((((x & !HI) + !HI) | x) >> 7) & LO
 }
 
 fn reduce_counts(counts: usize) -> usize {
