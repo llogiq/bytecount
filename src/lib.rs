@@ -1,43 +1,15 @@
 //! Counting occurrences of a byte in a slice
 //!
 //! There are two versions, one naive and simple (`naive_count`) and one
-//!  (`count`) that uses `unsafe` a lot, but is screamingly fast. The algorithm
-//! is actually called "hyperscreamingcount".
+//!  (`count`) that uses `unsafe`, but is hyperscreamingly fast.
 //!
 //! Usage is like you would expect (`count(haystack, needle)`).
-#[cfg(target_pointer_width = "16")] const USIZE_BYTES: usize = 2;
-#[cfg(target_pointer_width = "32")] const USIZE_BYTES: usize = 4;
-#[cfg(target_pointer_width = "64")] const USIZE_BYTES: usize = 8;
+use std::{cmp, mem, slice};
+
 const LO : usize = ::std::usize::MAX / 0xFF;
 const HI : usize = LO * 128;
 const EVERY_OTHER_BYTE_LO : usize = ::std::usize::MAX / 0xFFFF;
 const EVERY_OTHER_BYTE : usize = EVERY_OTHER_BYTE_LO * 0xFF;
-
-unsafe fn next(ptr: &mut *const usize) -> usize {
-    let ret = **ptr;
-    *ptr = ptr.offset(1);
-    ret
-}
-
-unsafe fn next_4(ptr: &mut *const usize, needles: usize) -> [usize; 4] {
-    let x = [next(ptr), next(ptr), next(ptr), next(ptr)];
-    [mask_zero(x[0], needles), mask_zero(x[1], needles),
-     mask_zero(x[2], needles), mask_zero(x[3], needles)]
-}
-
-fn mask_zero(x: usize, needles: usize) -> usize {
-    let x = x ^ needles;
-    !((((x & !HI) + !HI) | x) >> 7) & LO
-}
-
-fn reduce_counts(counts: usize) -> usize {
-    let pair_sum = (counts & EVERY_OTHER_BYTE) + ((counts >> 8) & EVERY_OTHER_BYTE);
-    pair_sum.wrapping_mul(EVERY_OTHER_BYTE_LO) >> ((USIZE_BYTES - 2) * 8)
-}
-
-fn arr_add(xs: [usize; 4], ys: [usize; 4]) -> [usize; 4] {
-    [xs[0]+ys[0], xs[1]+ys[1], xs[2]+ys[2], xs[3]+ys[3]]
-}
 
 /// Count occurrences of a byte in a slice of bytes, fast
 ///
@@ -49,72 +21,74 @@ fn arr_add(xs: [usize; 4], ys: [usize; 4]) -> [usize; 4] {
 /// assert_eq!(number_of_spaces, 5);
 /// ```
 pub fn count(haystack: &[u8], needle: u8) -> usize {
-    let len = haystack.len();
-    if len < USIZE_BYTES * 2 { return naive_count(haystack, needle) }
-    let needles = needle as usize * LO;
-    unsafe {
-        let mut ptr = haystack.as_ptr();
-        let mut end = ptr.offset(len as isize);
-        let mut count = 0;
+    let (pre, mid, post) = bytes_to_usizes(haystack);
+    naive_count(pre, needle) + usize_count(mid, needle) + naive_count(post, needle)
+}
 
-        // Align start
-        while (ptr as usize) & (USIZE_BYTES - 1) != 0 {
-            if ptr == end {
-                return count;
-            }
-            count += (*ptr == needle) as usize;
-            ptr = ptr.offset(1);
-        }
+fn bytes_to_usizes(x: &[u8]) -> (&[u8], &[[usize; 4]], &[u8]) {
+    let align = mem::size_of::<[usize; 4]>();
 
-        // Align end
-        while (end as usize) & (USIZE_BYTES - 1) != 0 {
-            end = end.offset(-1);
-            count += (*end == needle) as usize;
-        }
+    let offset_ptr = (x.as_ptr() as usize) % align;
+    let offset_end = (x.as_ptr() as usize + x.len()) % align;
 
-        if ptr == end {
-            return count;
-        }
+    let d2 = x.len().saturating_sub(offset_end);
+    let d1 = cmp::min((align - offset_ptr) % align, d2);
 
-        // Read in aligned blocks
-        let mut ptr = ptr as *const usize;
-        let end = end as *const usize;
+    let mid = &x[d1..d2];
+    assert!(mid.len() % align == 0);
+    let mid = unsafe {
+        slice::from_raw_parts(mid.as_ptr() as *const [usize; 4], mid.len() / align)
+    };
 
-        // 8kB
-        while ptr.offset(4 * 255) <= end {
-            let mut counts = [0, 0, 0, 0];
-            for _ in 0..255 {
-                counts = arr_add(counts, next_4(&mut ptr, needles));
-            }
-            count += reduce_counts(counts[0]);
-            count += reduce_counts(counts[1]);
-            count += reduce_counts(counts[2]);
-            count += reduce_counts(counts[3]);
-        }
+    (&x[..d1], mid, &x[d2..])
+}
 
-        // 1kB
-        while ptr.offset(4 * 32) <= end {
-            let mut counts = [0, 0, 0, 0];
-            for _ in 0..32 {
-                counts = arr_add(counts, next_4(&mut ptr, needles));
-            }
-            count += reduce_counts(counts[0] + counts[1] + counts[2] + counts[3]);
-        }
-        // 64B
-        let mut counts = [0, 0, 0, 0];
-        while ptr.offset(4 * 2) <= end {
-            for _ in 0..2 {
-                counts = arr_add(counts, next_4(&mut ptr, needles));
-            }
-        }
-        count += reduce_counts(counts[0] + counts[1] + counts[2] + counts[3]);
-        // 8B
-        let mut counts = 0;
-        while ptr < end {
-            counts += mask_zero(next(&mut ptr), needles);
-        }
-        count + reduce_counts(counts)
+
+fn vector_not(x: usize) -> usize {
+    !((((x & !HI) + !HI) | x) >> 7) & LO
+}
+
+fn arr_byte_equal(mut xs: [usize; 4], needles: usize) -> [usize; 4] {
+    for i in 0..4 {
+        xs[i] = vector_not(xs[i] ^ needles);
     }
+    xs
+}
+
+fn arr_add(xs: [usize; 4], ys: [usize; 4]) -> [usize; 4] {
+    [xs[0] + ys[0], xs[1] + ys[1], xs[2] + ys[2], xs[3] + ys[3]]
+}
+
+
+fn sum_bytes(counts: usize) -> usize {
+    // Pairwise reduction to avoid overflow on next step.
+    let pair_sum = (counts & EVERY_OTHER_BYTE) + ((counts >> 8) & EVERY_OTHER_BYTE);
+
+    // Multiplication results in top two bytes holding sum.
+    pair_sum.wrapping_mul(EVERY_OTHER_BYTE_LO) >> ((mem::size_of::<usize>() - 2) * 8)
+}
+
+
+fn usize_count(haystack: &[[usize; 4]], needle: u8) -> usize {
+    let needles = needle as usize * LO;
+    let mut count = 0;
+    let mut i = 0;
+
+    while i < haystack.len() {
+        let mut counts = [0, 0, 0, 0];
+
+        let end = cmp::min(i + 255, haystack.len());
+        for &c in &haystack[i..end] {
+            counts = arr_add(counts, arr_byte_equal(c, needles));
+        }
+        i = end;
+
+        for &c in &counts {
+            count += sum_bytes(c);
+        }
+    }
+
+    count
 }
 
 /// Count occurrences of a byte in a slice of bytes, simple
