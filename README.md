@@ -7,11 +7,11 @@ Counting bytes really fast
 [![License: Apache 2.0/MIT](https://img.shields.io/crates/l/bytecount.svg)](#License)
 
 This uses the "hyperscreamingcount" algorithm by Joshua Landau to count bytes
-faster than anything else. The [newlinebench](/llogiq/newlinebench) repository
+faster than anything else. The [newlinebench](https://github.com/llogiq/newlinebench) repository
 has further benchmarks.
 
 To use bytecount in your crate, if you have
-[cargo-edit](/killercup/cargo-edit), just type `cargo add bytecount` in a
+[cargo-edit](https://github.com/killercup/cargo-edit), just type `cargo add bytecount` in a
 terminal with the crate root as the current path. Otherwise you can manually
 edit your `Cargo.toml` to add `bytecount = 0.0.1` to your `[dependencies]`
 section.
