@@ -1,43 +1,168 @@
 //! Counting occurrences of a byte in a slice
-//!
-//! There are two versions, one naive and simple (`naive_count`) and one
-//!  (`count`) that uses `unsafe` a lot, but is screamingly fast. The algorithm
-//! is actually called "hyperscreamingcount".
-//!
-//! Usage is like you would expect (`count(haystack, needle)`).
-#[cfg(target_pointer_width = "16")] const USIZE_BYTES: usize = 2;
-#[cfg(target_pointer_width = "32")] const USIZE_BYTES: usize = 4;
-#[cfg(target_pointer_width = "64")] const USIZE_BYTES: usize = 8;
-const LO : usize = ::std::usize::MAX / 0xFF;
-const HI : usize = LO * 128;
-const EVERY_OTHER_BYTE_LO : usize = ::std::usize::MAX / 0xFFFF;
-const EVERY_OTHER_BYTE : usize = EVERY_OTHER_BYTE_LO * 0xFF;
+#[cfg(feature = "simd-accel")]
+extern crate simd;
 
-unsafe fn next(ptr: &mut *const usize) -> usize {
-    let ret = **ptr;
-    *ptr = ptr.offset(1);
-    ret
+use std::{cmp, mem, slice};
+
+#[cfg(feature = "simd-accel")]
+use simd::u8x16;
+#[cfg(feature = "avx-accel")]
+use simd::x86::sse2::Sse2U8x16;
+#[cfg(feature = "avx-accel")]
+use simd::x86::avx::{LowHigh128, u8x32};
+
+
+trait ByteChunk: Copy {
+    fn splat(byte: u8) -> Self;
+    fn bytewise_equal(self, other: Self) -> Self;
+    fn increment(self, incr: Self) -> Self;
+    fn sum(self) -> usize;
 }
 
-unsafe fn next_4(ptr: &mut *const usize, needles: usize) -> [usize; 4] {
-    let x = [next(ptr), next(ptr), next(ptr), next(ptr)];
-    [mask_zero(x[0], needles), mask_zero(x[1], needles),
-     mask_zero(x[2], needles), mask_zero(x[3], needles)]
+impl ByteChunk for usize {
+    fn splat(byte: u8) -> Self {
+        let lo = std::usize::MAX / 0xFF;
+        lo * byte as usize
+    }
+
+    fn bytewise_equal(self, other: Self) -> Self {
+        let lo = std::usize::MAX / 0xFF;
+        let hi = lo << 7;
+
+        let x = self ^ other;
+        !((((x & !hi) + !hi) | x) >> 7) & lo
+    }
+
+    fn increment(self, incr: Self) -> Self {
+        self + incr
+    }
+
+    fn sum(self) -> usize {
+        let every_other_byte_lo = std::usize::MAX / 0xFFFF;
+        let every_other_byte = every_other_byte_lo * 0xFF;
+
+        // Pairwise reduction to avoid overflow on next step.
+        let pair_sum = (self & every_other_byte) + ((self >> 8) & every_other_byte);
+
+        // Multiplication results in top two bytes holding sum.
+        pair_sum.wrapping_mul(every_other_byte_lo) >> ((mem::size_of::<usize>() - 2) * 8)
+    }
 }
 
-fn mask_zero(x: usize, needles: usize) -> usize {
-    let x = x ^ needles;
-    !((((x & !HI) + !HI) | x) >> 7) & LO
+#[cfg(feature = "simd-accel")]
+impl ByteChunk for u8x16 {
+    fn splat(byte: u8) -> Self {
+        Self::splat(byte)
+    }
+
+    fn bytewise_equal(self, other: Self) -> Self {
+        self.eq(other).to_repr().to_u8()
+    }
+
+    fn increment(self, incr: Self) -> Self {
+        // incr on -1
+        self - incr
+    }
+
+    fn sum(self) -> usize {
+        let mut count = 0;
+        for i in 0..16 {
+            count += self.extract(i) as usize;
+        }
+        count
+    }
 }
 
-fn reduce_counts(counts: usize) -> usize {
-    let pair_sum = (counts & EVERY_OTHER_BYTE) + ((counts >> 8) & EVERY_OTHER_BYTE);
-    pair_sum.wrapping_mul(EVERY_OTHER_BYTE_LO) >> ((USIZE_BYTES - 2) * 8)
+#[cfg(feature = "avx-accel")]
+impl ByteChunk for u8x32 {
+    fn splat(byte: u8) -> Self {
+        Self::splat(byte)
+    }
+
+    fn bytewise_equal(self, other: Self) -> Self {
+        self.eq(other).to_repr().to_u8()
+    }
+
+    fn increment(self, incr: Self) -> Self {
+        // incr on -1
+        self - incr
+    }
+
+    fn sum(self) -> usize {
+        let zero = u8x16::splat(0);
+        let sad_lo = self.low().sad(zero);
+        let sad_hi = self.high().sad(zero);
+
+        let mut count = 0;
+        count += (sad_lo.extract(0) + sad_lo.extract(1)) as usize;
+        count += (sad_hi.extract(0) + sad_hi.extract(1)) as usize;
+        count
+    }
 }
 
-fn arr_add(xs: [usize; 4], ys: [usize; 4]) -> [usize; 4] {
-    [xs[0]+ys[0], xs[1]+ys[1], xs[2]+ys[2], xs[3]+ys[3]]
+
+fn chunk_align<Chunk: ByteChunk>(x: &[u8]) -> (&[u8], &[[Chunk; 4]], &[u8]) {
+    let align = mem::size_of::<[Chunk; 4]>();
+
+    let offset_ptr = (x.as_ptr() as usize) % align;
+    let offset_end = (x.as_ptr() as usize + x.len()) % align;
+
+    let d2 = x.len().saturating_sub(offset_end);
+    let d1 = cmp::min((align - offset_ptr) % align, d2);
+
+    let mid = &x[d1..d2];
+    assert!(mid.len() % align == 0);
+    let mid = unsafe {
+        slice::from_raw_parts(mid.as_ptr() as *const [Chunk; 4], mid.len() / align)
+    };
+
+    (&x[..d1], mid, &x[d2..])
 }
+
+fn arr_byte_equal<Chunk: ByteChunk>(mut xs: [Chunk; 4], needles: Chunk) -> [Chunk; 4] {
+    for i in 0..4 {
+        xs[i] = xs[i].bytewise_equal(needles);
+    }
+    xs
+}
+
+fn arr_incr<Chunk: ByteChunk>(xs: [Chunk; 4], ys: [Chunk; 4]) -> [Chunk; 4] {
+    [
+        xs[0].increment(ys[0]),
+        xs[1].increment(ys[1]),
+        xs[2].increment(ys[2]),
+        xs[3].increment(ys[3])
+    ]
+}
+
+fn chunk_count<Chunk: ByteChunk>(haystack: &[[Chunk; 4]], needle: u8) -> usize {
+    let zero = Chunk::splat(0);
+    let needles = Chunk::splat(needle);
+    let mut count = 0;
+    let mut i = 0;
+
+    while i < haystack.len() {
+        let mut counts = [zero, zero, zero, zero];
+
+        let end = cmp::min(i + 255, haystack.len());
+        for &c in &haystack[i..end] {
+            counts = arr_incr(counts, arr_byte_equal(c, needles));
+        }
+        i = end;
+
+        for i in 0..4 {
+            count += counts[i].sum();
+        }
+    }
+
+    count
+}
+
+fn count_generic<Chunk: ByteChunk>(haystack: &[u8], needle: u8) -> usize {
+    let (pre, mid, post) = chunk_align::<Chunk>(haystack);
+    naive_count(pre, needle) + chunk_count(mid, needle) + naive_count(post, needle)
+}
+
 
 /// Count occurrences of a byte in a slice of bytes, fast
 ///
@@ -48,73 +173,19 @@ fn arr_add(xs: [usize; 4], ys: [usize; 4]) -> [usize; 4] {
 /// let number_of_spaces = bytecount::count(s, b' ');
 /// assert_eq!(number_of_spaces, 5);
 /// ```
+#[cfg(not(feature = "simd-accel"))]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
-    let len = haystack.len();
-    if len < USIZE_BYTES * 2 { return naive_count(haystack, needle) }
-    let needles = needle as usize * LO;
-    unsafe {
-        let mut ptr = haystack.as_ptr();
-        let mut end = ptr.offset(len as isize);
-        let mut count = 0;
+    count_generic::<usize>(haystack, needle)
+}
 
-        // Align start
-        while (ptr as usize) & (USIZE_BYTES - 1) != 0 {
-            if ptr == end {
-                return count;
-            }
-            count += (*ptr == needle) as usize;
-            ptr = ptr.offset(1);
-        }
+#[cfg(all(feature = "simd-accel", not(feature = "avx-accel")))]
+pub fn count(haystack: &[u8], needle: u8) -> usize {
+    count_generic::<u8x16>(haystack, needle)
+}
 
-        // Align end
-        while (end as usize) & (USIZE_BYTES - 1) != 0 {
-            end = end.offset(-1);
-            count += (*end == needle) as usize;
-        }
-
-        if ptr == end {
-            return count;
-        }
-
-        // Read in aligned blocks
-        let mut ptr = ptr as *const usize;
-        let end = end as *const usize;
-
-        // 8kB
-        while ptr.offset(4 * 255) <= end {
-            let mut counts = [0, 0, 0, 0];
-            for _ in 0..255 {
-                counts = arr_add(counts, next_4(&mut ptr, needles));
-            }
-            count += reduce_counts(counts[0]);
-            count += reduce_counts(counts[1]);
-            count += reduce_counts(counts[2]);
-            count += reduce_counts(counts[3]);
-        }
-
-        // 1kB
-        while ptr.offset(4 * 32) <= end {
-            let mut counts = [0, 0, 0, 0];
-            for _ in 0..32 {
-                counts = arr_add(counts, next_4(&mut ptr, needles));
-            }
-            count += reduce_counts(counts[0] + counts[1] + counts[2] + counts[3]);
-        }
-        // 64B
-        let mut counts = [0, 0, 0, 0];
-        while ptr.offset(4 * 2) <= end {
-            for _ in 0..2 {
-                counts = arr_add(counts, next_4(&mut ptr, needles));
-            }
-        }
-        count += reduce_counts(counts[0] + counts[1] + counts[2] + counts[3]);
-        // 8B
-        let mut counts = 0;
-        while ptr < end {
-            counts += mask_zero(next(&mut ptr), needles);
-        }
-        count + reduce_counts(counts)
-    }
+#[cfg(feature = "avx-accel")]
+pub fn count(haystack: &[u8], needle: u8) -> usize {
+    count_generic::<u8x32>(haystack, needle)
 }
 
 /// Count occurrences of a byte in a slice of bytes, simple
@@ -127,5 +198,5 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
 /// assert_eq!(number_of_spaces, 6);
 /// ```
 pub fn naive_count(haystack: &[u8], needle: u8) -> usize {
-    haystack.iter().filter(|&&c| c == needle).count()
+    haystack.iter().fold(0, |n, &c| n + (c == needle) as usize)
 }
