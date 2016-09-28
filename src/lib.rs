@@ -198,5 +198,5 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
 /// assert_eq!(number_of_spaces, 6);
 /// ```
 pub fn naive_count(haystack: &[u8], needle: u8) -> usize {
-    haystack.iter().filter(|&&c| c == needle).count()
+    haystack.iter().fold(0, |n, &c| n + (c == needle) as usize)
 }
