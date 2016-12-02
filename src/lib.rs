@@ -11,15 +11,16 @@ use simd::x86::sse2::Sse2U8x16;
 #[cfg(feature = "avx-accel")]
 use simd::x86::avx::{LowHigh128, u8x32};
 
-
-trait ByteChunk: Copy {
+/// A trait for fixed size arrays of bytes. If `T: ByteChunk`, then any
+/// combination of `mem::size_of::<T>()` bytes must be a valid instance of `T`.
+unsafe trait ByteChunk: Copy {
     fn splat(byte: u8) -> Self;
     fn bytewise_equal(self, other: Self) -> Self;
     fn increment(self, incr: Self) -> Self;
     fn sum(self) -> usize;
 }
 
-impl ByteChunk for usize {
+unsafe impl ByteChunk for usize {
     fn splat(byte: u8) -> Self {
         let lo = std::usize::MAX / 0xFF;
         lo * byte as usize
@@ -50,7 +51,7 @@ impl ByteChunk for usize {
 }
 
 #[cfg(feature = "simd-accel")]
-impl ByteChunk for u8x16 {
+unsafe impl ByteChunk for u8x16 {
     fn splat(byte: u8) -> Self {
         Self::splat(byte)
     }
@@ -74,7 +75,7 @@ impl ByteChunk for u8x16 {
 }
 
 #[cfg(feature = "avx-accel")]
-impl ByteChunk for u8x32 {
+unsafe impl ByteChunk for u8x32 {
     fn splat(byte: u8) -> Self {
         Self::splat(byte)
     }
