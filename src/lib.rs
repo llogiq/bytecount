@@ -13,16 +13,24 @@ use simd::x86::avx::{LowHigh128, u8x32};
 
 
 trait ByteChunk: Copy {
-    fn splat(byte: u8) -> Self;
-    fn bytewise_equal(self, other: Self) -> Self;
+    type Splat: Copy;
+    fn splat(byte: u8) -> Self::Splat;
+    fn from_splat(splat: Self::Splat) -> Self;
+    fn bytewise_equal(self, other: Self::Splat) -> Self;
     fn increment(self, incr: Self) -> Self;
-    fn sum(self) -> usize;
+    fn sum(&self) -> usize;
 }
 
 impl ByteChunk for usize {
+    type Splat = Self;
+
     fn splat(byte: u8) -> Self {
         let lo = std::usize::MAX / 0xFF;
         lo * byte as usize
+    }
+
+    fn from_splat(splat: Self) -> Self {
+        splat
     }
 
     fn bytewise_equal(self, other: Self) -> Self {
@@ -37,12 +45,12 @@ impl ByteChunk for usize {
         self + incr
     }
 
-    fn sum(self) -> usize {
+    fn sum(&self) -> usize {
         let every_other_byte_lo = std::usize::MAX / 0xFFFF;
         let every_other_byte = every_other_byte_lo * 0xFF;
 
         // Pairwise reduction to avoid overflow on next step.
-        let pair_sum = (self & every_other_byte) + ((self >> 8) & every_other_byte);
+        let pair_sum: usize = (self & every_other_byte) + ((self >> 8) & every_other_byte);
 
         // Multiplication results in top two bytes holding sum.
         pair_sum.wrapping_mul(every_other_byte_lo) >> ((mem::size_of::<usize>() - 2) * 8)
@@ -51,8 +59,14 @@ impl ByteChunk for usize {
 
 #[cfg(feature = "simd-accel")]
 impl ByteChunk for u8x16 {
+    type Splat = Self;
+
     fn splat(byte: u8) -> Self {
         Self::splat(byte)
+    }
+
+    fn from_splat(splat: Self) -> Self {
+        splat
     }
 
     fn bytewise_equal(self, other: Self) -> Self {
@@ -64,7 +78,7 @@ impl ByteChunk for u8x16 {
         self - incr
     }
 
-    fn sum(self) -> usize {
+    fn sum(&self) -> usize {
         let mut count = 0;
         for i in 0..16 {
             count += self.extract(i) as usize;
@@ -75,8 +89,14 @@ impl ByteChunk for u8x16 {
 
 #[cfg(feature = "avx-accel")]
 impl ByteChunk for u8x32 {
+    type Splat = Self;
+
     fn splat(byte: u8) -> Self {
         Self::splat(byte)
+    }
+
+    fn from_splat(splat: Self) -> Self {
+        splat
     }
 
     fn bytewise_equal(self, other: Self) -> Self {
@@ -88,7 +108,7 @@ impl ByteChunk for u8x32 {
         self - incr
     }
 
-    fn sum(self) -> usize {
+    fn sum(&self) -> usize {
         let zero = u8x16::splat(0);
         let sad_lo = self.low().sad(zero);
         let sad_hi = self.high().sad(zero);
@@ -100,9 +120,45 @@ impl ByteChunk for u8x32 {
     }
 }
 
+impl<T> ByteChunk for [T; 4]
+    where T: ByteChunk<Splat = T>
+{
+    type Splat = T;
 
-fn chunk_align<Chunk: ByteChunk>(x: &[u8]) -> (&[u8], &[[Chunk; 4]], &[u8]) {
-    let align = mem::size_of::<[Chunk; 4]>();
+    fn splat(byte: u8) -> T {
+        T::splat(byte)
+    }
+
+    fn from_splat(splat: T) -> Self {
+        [splat, splat, splat, splat]
+    }
+
+    fn bytewise_equal(mut self, needles: Self::Splat) -> Self {
+        for i in 0..4 {
+            self[i] = self[i].bytewise_equal(needles);
+        }
+        self
+    }
+
+    fn increment(self, incr: Self) -> Self {
+        [self[0].increment(incr[0]),
+         self[1].increment(incr[1]),
+         self[2].increment(incr[2]),
+         self[3].increment(incr[3])]
+    }
+
+    fn sum(&self) -> usize {
+        let mut count = 0;
+        for i in 0..4 {
+            count += self[i].sum();
+        }
+        count
+    }
+}
+
+
+fn chunk_align<Chunk: ByteChunk>(x: &[u8]) -> (&[u8], &[Chunk], &[u8]) {
+    let align = mem::size_of::<Chunk>();
 
     let offset_ptr = (x.as_ptr() as usize) % align;
     let offset_end = (x.as_ptr() as usize + x.len()) % align;
@@ -112,55 +168,58 @@ fn chunk_align<Chunk: ByteChunk>(x: &[u8]) -> (&[u8], &[[Chunk; 4]], &[u8]) {
 
     let mid = &x[d1..d2];
     assert!(mid.len() % align == 0);
-    let mid = unsafe {
-        slice::from_raw_parts(mid.as_ptr() as *const [Chunk; 4], mid.len() / align)
-    };
+    let mid = unsafe { slice::from_raw_parts(mid.as_ptr() as *const Chunk, mid.len() / align) };
 
     (&x[..d1], mid, &x[d2..])
 }
 
-fn arr_byte_equal<Chunk: ByteChunk>(mut xs: [Chunk; 4], needles: Chunk) -> [Chunk; 4] {
-    for i in 0..4 {
-        xs[i] = xs[i].bytewise_equal(needles);
-    }
-    xs
-}
-
-fn arr_incr<Chunk: ByteChunk>(xs: [Chunk; 4], ys: [Chunk; 4]) -> [Chunk; 4] {
-    [
-        xs[0].increment(ys[0]),
-        xs[1].increment(ys[1]),
-        xs[2].increment(ys[2]),
-        xs[3].increment(ys[3])
-    ]
-}
-
-fn chunk_count<Chunk: ByteChunk>(haystack: &[[Chunk; 4]], needle: u8) -> usize {
+fn chunk_count<Chunk: ByteChunk>(haystack: &[Chunk], needle: u8) -> usize {
     let zero = Chunk::splat(0);
     let needles = Chunk::splat(needle);
     let mut count = 0;
     let mut i = 0;
 
     while i < haystack.len() {
-        let mut counts = [zero, zero, zero, zero];
+        let mut counts = Chunk::from_splat(zero);
 
         let end = cmp::min(i + 255, haystack.len());
-        for &c in &haystack[i..end] {
-            counts = arr_incr(counts, arr_byte_equal(c, needles));
+        for &chunk in &haystack[i..end] {
+            counts = counts.increment(chunk.bytewise_equal(needles));
         }
         i = end;
 
-        for i in 0..4 {
-            count += counts[i].sum();
-        }
+        count += counts.sum();
     }
 
     count
 }
 
-fn count_generic<Chunk: ByteChunk>(haystack: &[u8], needle: u8) -> usize {
-    let (pre, mid, post) = chunk_align::<Chunk>(haystack);
-    naive_count(pre, needle) + chunk_count(mid, needle) + naive_count(post, needle)
+fn count_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize,
+                                                  group_above: usize,
+                                                  haystack: &[u8],
+                                                  needle: u8)
+                                                  -> usize {
+    let mut count = 0;
+
+    // Extract pre/post so naive_count is only inlined once.
+    let len = haystack.len();
+    let unchunked = if len < naive_below {
+        [haystack, &haystack[0..0]]
+    } else if len > group_above {
+        let (pre, mid, post) = chunk_align::<[Chunk; 4]>(haystack);
+        count += chunk_count(mid, needle);
+        [pre, post]
+    } else {
+        let (pre, mid, post) = chunk_align::<Chunk>(haystack);
+        count += chunk_count(mid, needle);
+        [pre, post]
+    };
+
+    for &slice in &unchunked {
+        count += naive_count(slice, needle);
+    }
+
+    count
 }
 
 
@@ -175,17 +234,18 @@ fn count_generic<Chunk: ByteChunk>(haystack: &[u8], needle: u8) -> usize {
 /// ```
 #[cfg(not(feature = "simd-accel"))]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
-    count_generic::<usize>(haystack, needle)
+    // Never use [usize; 4]
+    count_generic::<usize>(32, usize::max_value(), haystack, needle)
 }
 
 #[cfg(all(feature = "simd-accel", not(feature = "avx-accel")))]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
-    count_generic::<u8x16>(haystack, needle)
+    count_generic::<u8x16>(32, 4096, haystack, needle)
 }
 
 #[cfg(feature = "avx-accel")]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
-    count_generic::<u8x32>(haystack, needle)
+    count_generic::<u8x32>(64, 4096, haystack, needle)
 }
 
 /// Count occurrences of a byte in a slice of bytes, simple

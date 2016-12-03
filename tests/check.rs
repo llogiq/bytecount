@@ -1,5 +1,6 @@
 extern crate bytecount;
-#[macro_use] extern crate quickcheck;
+#[macro_use]
+extern crate quickcheck;
 extern crate rand;
 
 use std::iter;
@@ -43,5 +44,6 @@ fn check_some() {
 fn check_overflow() {
     let haystack = vec![0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     let needle = 2;
-    assert_eq!(count(&haystack[0..], needle), naive_count(&haystack[0..], needle));
+    assert_eq!(count(&haystack[0..], needle),
+               naive_count(&haystack[0..], needle));
 }
