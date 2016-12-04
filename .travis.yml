@@ -18,3 +18,4 @@ sudo: false
 script: |
   curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | bash
   cargo test && cargo bench
+  rustc -vV | grep -q nightly && cargo test --features simd-accel && cargo bench --features simd-accel
