@@ -1,4 +1,6 @@
 language: rust
+sudo: false
+cache: cargo
 rust:
   - stable
   - beta
@@ -8,15 +10,29 @@ os:
   - osx
 env:
   - ARCH=x86_64
-  - ARCH=i686
+  - FEATURES=""
+  - RUSTFLAGS="-C target-cpu=native"
+matrix:
+  include:
+    - rust: stable
+      env:
+        - ARCH=i686
+    - rust: beta
+      env:
+        - ARCH=i686
+    - rust: nightly
+      env:
+        - ARCH=i686
+    - rust: nightly
+      env:
+        - FEATURES="--features simd-accel"
+    - rust: nightly
+      env:
+        - FEATURES="--features avx-accel"
 addons:
   apt:
     packages:
       - gcc-multilib
-cache: cargo
-sudo: false
 script: |
   curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | bash
-  cargo test && cargo bench
-  rustc -vV | grep -q nightly && cargo test --features simd-accel && cargo bench --features simd-accel &&\
-  cargo test --features avx-accel && cargo bench --features avx-accel || true
+  cargo test $FEATURES && cargo bench $FEATURES
