@@ -11,7 +11,6 @@ os:
 env:
   - ARCH=x86_64
   - FEATURES=""
-  - RUSTFLAGS="-C target-cpu=native"
 matrix:
   include:
     - rust: stable
@@ -25,14 +24,20 @@ matrix:
         - ARCH=i686
     - rust: nightly
       env:
+        - ARCH=x86_64
         - FEATURES="--features simd-accel"
     - rust: nightly
       env:
+        - ARCH=x86_64
         - FEATURES="--features avx-accel"
+        - RUSTFLAGS="-C target-feature=+avx"
 addons:
   apt:
     packages:
       - gcc-multilib
 script: |
+  echo ARCH=$ARCH
+  echo FEATURES=$FEATURES
+  echo RUSTFLAGS=$RUSTFLAGS
   curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | bash
   cargo test $FEATURES && cargo bench $FEATURES
