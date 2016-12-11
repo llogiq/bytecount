@@ -1,17 +1,43 @@
 language: rust
-rust: nightly
+sudo: false
+cache: cargo
+rust:
+  - stable
+  - beta
+  - nightly
 os:
   - linux
   - osx
 env:
   - ARCH=x86_64
-  - ARCH=i686
+  - FEATURES=""
+matrix:
+  include:
+    - rust: stable
+      env:
+        - ARCH=i686
+    - rust: beta
+      env:
+        - ARCH=i686
+    - rust: nightly
+      env:
+        - ARCH=i686
+    - rust: nightly
+      env:
+        - ARCH=x86_64
+        - FEATURES="--features simd-accel"
+    - rust: nightly
+      env:
+        - ARCH=x86_64
+        - FEATURES="--features avx-accel"
+        - RUSTFLAGS="-C target-feature=+avx"
 addons:
   apt:
     packages:
       - gcc-multilib
-cache: cargo
-sudo: false
 script: |
+  echo ARCH=$ARCH
+  echo FEATURES=$FEATURES
+  echo RUSTFLAGS=$RUSTFLAGS
   curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | bash
-  cargo test && cargo bench
+  cargo test $FEATURES && cargo bench $FEATURES
