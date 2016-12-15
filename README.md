@@ -6,15 +6,12 @@ Counting bytes really fast
 [![Current Version](http://meritbadge.herokuapp.com/bytecount)](https://crates.io/crates/bytecount)
 [![License: Apache 2.0/MIT](https://img.shields.io/crates/l/bytecount.svg)](#License)
 
-This uses the "hyperscreamingcount" algorithm by Joshua Landau to count bytes
-faster than anything else. The [newlinebench](https://github.com/llogiq/newlinebench) repository
-has further benchmarks.
+This uses the "hyperscreamingcount" algorithm by Joshua Landau to count bytes faster than anything else. The
+[newlinebench](https://github.com/llogiq/newlinebench) repository has further benchmarks.
 
-To use bytecount in your crate, if you have
-[cargo-edit](https://github.com/killercup/cargo-edit), just type `cargo add bytecount` in a
-terminal with the crate root as the current path. Otherwise you can manually
-edit your `Cargo.toml` to add `bytecount = 0.0.1` to your `[dependencies]`
-section.
+To use bytecount in your crate, if you have [cargo-edit](https://github.com/killercup/cargo-edit), just type
+`cargo add bytecount` in a terminal with the crate root as the current path. Otherwise you can manually edit your
+`Cargo.toml` to add `bytecount = 0.1.4` to your `[dependencies]` section.
 
 In your crate root (`lib.rs` or `main.rs`, depending on if you are writing a
 library or application), add `extern crate bytecount;`. Now you can simply use
@@ -30,5 +27,34 @@ fn main() {
 }
 ```
 
+bytecount supports two features to make use of modern CPU's features to speed up counting considerably. To allow your
+users to use them, add the following to your `Cargo.toml`:
+
+```
+[features]
+avx-accel = ["bytecount/avx-accel"]
+simd-accel = ["bytecount/simd-accel"]
+```
+
+Now your users can compile with SSE support (available on most modern x86_64 processors) using:
+
+
+```
+cargo build --release --features simd-accel
+```
+
+Or even with AVX support (which likely requires compiling for the native target CPU):
+
+```
+RUSTFLAGS="-C target-cpu=native" cargo build --release --features "simd-accel avx-accel"
+```
+
 The algorithm is explained in depth
 [here](https://llogiq.github.io/2016/09/27/count.html).
+
+## License
+
+Licensed under either of at your discretion:
+
+- [Apache 2.0](blob/master/LICENSE.Apache2)
+- [MIT](blob/master/LICENSE.MIT)
