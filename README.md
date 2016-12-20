@@ -56,5 +56,5 @@ The algorithm is explained in depth
 
 Licensed under either of at your discretion:
 
-- [Apache 2.0](blob/master/LICENSE.Apache2)
-- [MIT](blob/master/LICENSE.MIT)
+- [Apache 2.0](LICENSE.Apache2)
+- [MIT](LICENSE.MIT)
