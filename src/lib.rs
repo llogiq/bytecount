@@ -134,8 +134,8 @@ impl<T> ByteChunk for [T; 4]
     }
 
     fn bytewise_equal(mut self, needles: Self::Splat) -> Self {
-        for i in 0..4 {
-            self[i] = self[i].bytewise_equal(needles);
+        for t in self[..].iter_mut() {
+            *t = t.bytewise_equal(needles);
         }
         self
     }
@@ -148,11 +148,7 @@ impl<T> ByteChunk for [T; 4]
     }
 
     fn sum(&self) -> usize {
-        let mut count = 0;
-        for i in 0..4 {
-            count += self[i].sum();
-        }
-        count
+        self[..].iter().map(ByteChunk::sum).sum()
     }
 }
 
