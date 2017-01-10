@@ -2,7 +2,7 @@
 #[cfg(feature = "simd-accel")]
 extern crate simd;
 
-use std::{cmp, mem, slice, usize};
+use std::{cmp, mem, ops, slice, usize};
 
 #[cfg(feature = "simd-accel")]
 use simd::u8x16;
@@ -148,7 +148,7 @@ impl<T> ByteChunk for [T; 4]
     }
 
     fn sum(&self) -> usize {
-        self[..].iter().map(ByteChunk::sum).sum()
+        self[..].iter().map(ByteChunk::sum).fold(0, ops::Add::add)
     }
 }
 
