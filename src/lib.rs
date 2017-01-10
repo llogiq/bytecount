@@ -2,7 +2,7 @@
 #[cfg(feature = "simd-accel")]
 extern crate simd;
 
-use std::{cmp, mem, slice};
+use std::{cmp, mem, slice, usize};
 
 #[cfg(feature = "simd-accel")]
 use simd::u8x16;
@@ -162,11 +162,12 @@ fn chunk_align<Chunk: ByteChunk>(x: &[u8]) -> (&[u8], &[Chunk], &[u8]) {
     let d2 = x.len().saturating_sub(offset_end);
     let d1 = cmp::min((align - offset_ptr) % align, d2);
 
-    let mid = &x[d1..d2];
+    let (init, tail) = x.split_at(d2);
+    let (init, mid) = init.split_at(d1);
     assert!(mid.len() % align == 0);
     let mid = unsafe { slice::from_raw_parts(mid.as_ptr() as *const Chunk, mid.len() / align) };
 
-    (&x[..d1], mid, &x[d2..])
+    (init, mid, tail)
 }
 
 fn chunk_count<Chunk: ByteChunk>(haystack: &[Chunk], needle: u8) -> usize {
@@ -231,7 +232,7 @@ fn count_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize,
 #[cfg(not(feature = "simd-accel"))]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
     // Never use [usize; 4]
-    count_generic::<usize>(32, usize::max_value(), haystack, needle)
+    count_generic::<usize>(32, usize::MAX, haystack, needle)
 }
 
 #[cfg(all(feature = "simd-accel", not(feature = "avx-accel")))]
