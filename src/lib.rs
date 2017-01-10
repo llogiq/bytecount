@@ -25,7 +25,7 @@ impl ByteChunk for usize {
     type Splat = Self;
 
     fn splat(byte: u8) -> Self {
-        let lo = std::usize::MAX / 0xFF;
+        let lo = usize::MAX / 0xFF;
         lo * byte as usize
     }
 
@@ -34,7 +34,7 @@ impl ByteChunk for usize {
     }
 
     fn bytewise_equal(self, other: Self) -> Self {
-        let lo = std::usize::MAX / 0xFF;
+        let lo = usize::MAX / 0xFF;
         let hi = lo << 7;
 
         let x = self ^ other;
@@ -46,7 +46,7 @@ impl ByteChunk for usize {
     }
 
     fn sum(&self) -> usize {
-        let every_other_byte_lo = std::usize::MAX / 0xFFFF;
+        let every_other_byte_lo = usize::MAX / 0xFFFF;
         let every_other_byte = every_other_byte_lo * 0xFF;
 
         // Pairwise reduction to avoid overflow on next step.
