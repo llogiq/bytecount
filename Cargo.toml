@@ -17,7 +17,7 @@ simd-accel = ["simd"]
 simd = { version = "0.1.1", optional = true }
 
 [dev-dependencies]
-quickcheck = "0.3.1"
+quickcheck = "0.4.1"
 rand = "0.3.14"
 bencher = "0.1"
 
