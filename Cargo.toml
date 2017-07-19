@@ -2,7 +2,7 @@
 authors = ["Andre Bogus <bogusandre@gmail.de>", "Joshua Landau <joshua@landau.ws>"]
 description = "count occurrences of a byte in a byte slice, fast"
 name = "bytecount"
-version = "0.1.6"
+version = "0.1.7"
 license = "Apache-2.0/MIT"
 repository = "https://github.com/llogiq/bytecount"
 
@@ -17,9 +17,9 @@ simd-accel = ["simd"]
 simd = { version = "0.2.0", optional = true }
 
 [dev-dependencies]
-quickcheck = "0.4.0"
-rand = "0.3.14"
-bencher = "0.1"
+quickcheck = "0.4.1"
+rand = "0.3.15"
+bencher = "0.1.2"
 
 [[bench]]
 name = "bench"
