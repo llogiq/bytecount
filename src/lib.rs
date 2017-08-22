@@ -245,9 +245,23 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
     count_generic::<u8x32>(64, 4096, haystack, needle)
 }
 
+/// Count up to `(2^32)-1` occurrences of a byte in a slice
+/// of bytes, simple
+///
+/// # Example
+///
+/// ```
+/// let s = b"This is yet another Text with spaces";
+/// let number_of_spaces = bytecount::naive_count(s, b' ');
+/// assert_eq!(number_of_spaces, 6);
+/// ```
+pub fn naive_count_32(haystack: &[u8], needle: u8) -> usize {
+    haystack.iter().fold(0, |n, c| n + (*c == needle) as u32) as usize
+}
+
 /// Count occurrences of a byte in a slice of bytes, simple
 ///
-/// # Examples
+/// # Example
 ///
 /// ```
 /// let s = b"This is yet another Text with spaces";
@@ -255,5 +269,5 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
 /// assert_eq!(number_of_spaces, 6);
 /// ```
 pub fn naive_count(haystack: &[u8], needle: u8) -> usize {
-    haystack.iter().fold(0, |n, &c| n + (c == needle) as usize)
+    haystack.iter().fold(0, |n, c| n + (*c == needle) as usize)
 }

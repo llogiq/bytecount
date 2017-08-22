@@ -2,7 +2,7 @@
 authors = ["Andre Bogus <bogusandre@gmail.de>", "Joshua Landau <joshua@landau.ws>"]
 description = "count occurrences of a byte in a byte slice, fast"
 name = "bytecount"
-version = "0.1.7"
+version = "0.1.8"
 license = "Apache-2.0/MIT"
 repository = "https://github.com/llogiq/bytecount"
 
