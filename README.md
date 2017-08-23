@@ -52,7 +52,8 @@ RUSTFLAGS="-C target-cpu=native" cargo build --release --features "simd-accel av
 The algorithm is explained in depth
 [here](https://llogiq.github.io/2016/09/27/count.html).
 
-Note that for very short slices, the data parallelism will likely not
+Note that for very short slices, the data parallelism will likely not win much performance gains. In those cases, a naive
+count with a 32-bit counter may be a superior solution, unless counting *really* large byte slices.
 
 ## License
 
