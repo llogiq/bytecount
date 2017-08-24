@@ -2,7 +2,7 @@
 
 Counting bytes really fast
 
-[![Build Status](https://travis-ci.org/llogiq/bytecount.svg?branch=master)](https://travis-ci.org/llogiq/bytecount) 
+[![Build Status](https://travis-ci.org/llogiq/bytecount.svg?branch=master)](https://travis-ci.org/llogiq/bytecount)
 [![Windows build status](https://ci.appveyor.com/api/projects/status/github/llogiq/bytecount?svg=true)](https://ci.appveyor.com/project/llogiq/bytecount)
 [![Current Version](http://meritbadge.herokuapp.com/bytecount)](https://crates.io/crates/bytecount)
 [![License: Apache 2.0/MIT](https://img.shields.io/crates/l/bytecount.svg)](#license)
@@ -39,7 +39,6 @@ simd-accel = ["bytecount/simd-accel"]
 
 Now your users can compile with SSE support (available on most modern x86_64 processors) using:
 
-
 ```
 cargo build --release --features simd-accel
 ```
@@ -52,6 +51,9 @@ RUSTFLAGS="-C target-cpu=native" cargo build --release --features "simd-accel av
 
 The algorithm is explained in depth
 [here](https://llogiq.github.io/2016/09/27/count.html).
+
+Note that for very short slices, the data parallelism will likely not win much performance gains. In those cases, a naive
+count with a 32-bit counter may be a superior solution, unless counting *really* large byte slices.
 
 ## License
 
