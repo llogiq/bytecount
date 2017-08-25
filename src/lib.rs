@@ -1,8 +1,11 @@
 //! Counting occurrences of a byte in a slice
+
+#![no_std]
+
 #[cfg(feature = "simd-accel")]
 extern crate simd;
 
-use std::{cmp, mem, ops, slice, usize};
+use core::{cmp, mem, ops, slice, usize};
 
 #[cfg(feature = "simd-accel")]
 use simd::u8x16;
@@ -164,7 +167,7 @@ fn chunk_align<Chunk: ByteChunk>(x: &[u8]) -> (&[u8], &[Chunk], &[u8]) {
 
     let (init, tail) = x.split_at(d2);
     let (init, mid) = init.split_at(d1);
-    assert!(mid.len() % align == 0);
+    assert_eq!(mid.len() % align, 0);
     let mid = unsafe { slice::from_raw_parts(mid.as_ptr() as *const Chunk, mid.len() / align) };
 
     (init, mid, tail)

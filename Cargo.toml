@@ -2,9 +2,14 @@
 authors = ["Andre Bogus <bogusandre@gmail.de>", "Joshua Landau <joshua@landau.ws>"]
 description = "count occurrences of a byte in a byte slice, fast"
 name = "bytecount"
-version = "0.1.8"
+version = "0.2.0"
 license = "Apache-2.0/MIT"
 repository = "https://github.com/llogiq/bytecount"
+categories = ["algorithms", "no-std"]
+
+[badges]
+travis-ci = { repository = "llogiq/bytecount" }
+appveyor = { repository = "llogiq/bytecount" }
 
 [lib]
 bench = false
@@ -18,8 +23,8 @@ simd = { version = "0.2.0", optional = true }
 
 [dev-dependencies]
 quickcheck = "0.4.1"
-rand = "0.3.15"
-bencher = "0.1.2"
+rand = "0.3.16"
+bencher = "0.1.4"
 
 [[bench]]
 name = "bench"

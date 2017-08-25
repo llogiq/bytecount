@@ -55,30 +55,30 @@ bench!(600, bench_00600_naive, bench_00600_32, bench_00600_hyper);
 bench!(700, bench_00700_naive, bench_00700_32, bench_00700_hyper);
 bench!(800, bench_00800_naive, bench_00800_32, bench_00800_hyper);
 bench!(900, bench_00900_naive, bench_00900_32, bench_00900_hyper);
-bench!(1000, bench_01000_naive, bench_01000_32, bench_01000_hyper);
-bench!(1200, bench_01200_naive, bench_01200_32, bench_01200_hyper);
-bench!(1400, bench_01400_naive, bench_01400_32, bench_01400_hyper);
-bench!(1700, bench_01700_naive, bench_01700_32, bench_01700_hyper);
-bench!(2100, bench_02100_naive, bench_02100_32, bench_02100_hyper);
-bench!(2500, bench_02500_naive, bench_02500_32, bench_02500_hyper);
-bench!(3000, bench_03000_naive, bench_03000_32, bench_03000_hyper);
+bench!(1_000, bench_01000_naive, bench_01000_32, bench_01000_hyper);
+bench!(1_200, bench_01200_naive, bench_01200_32, bench_01200_hyper);
+bench!(1_400, bench_01400_naive, bench_01400_32, bench_01400_hyper);
+bench!(1_700, bench_01700_naive, bench_01700_32, bench_01700_hyper);
+bench!(2_100, bench_02100_naive, bench_02100_32, bench_02100_hyper);
+bench!(2_500, bench_02500_naive, bench_02500_32, bench_02500_hyper);
+bench!(3_000, bench_03000_naive, bench_03000_32, bench_03000_hyper);
 
-bench!(4000, bench_04000_naive, bench_04000_32, bench_04000_hyper);
-bench!(5000, bench_05000_naive, bench_05000_32, bench_05000_hyper);
-bench!(6000, bench_06000_naive, bench_06000_32, bench_06000_hyper);
-bench!(7000, bench_07000_naive, bench_07000_32, bench_07000_hyper);
-bench!(8000, bench_08000_naive, bench_08000_32, bench_08000_hyper);
-bench!(9000, bench_09000_naive, bench_09000_32, bench_09000_hyper);
-bench!(10000, bench_10000_naive, bench_10000_32, bench_10000_hyper);
-bench!(12000, bench_12000_naive, bench_12000_32, bench_12000_hyper);
-bench!(14000, bench_14000_naive, bench_14000_32, bench_14000_hyper);
-bench!(17000, bench_17000_naive, bench_17000_32, bench_17000_hyper);
-bench!(21000, bench_21000_naive, bench_21000_32, bench_21000_hyper);
-bench!(25000, bench_25000_naive, bench_25000_32, bench_25000_hyper);
-bench!(30000, bench_30000_naive, bench_30000_32, bench_30000_hyper);
+bench!(4_000, bench_04000_naive, bench_04000_32, bench_04000_hyper);
+bench!(5_000, bench_05000_naive, bench_05000_32, bench_05000_hyper);
+bench!(6_000, bench_06000_naive, bench_06000_32, bench_06000_hyper);
+bench!(7_000, bench_07000_naive, bench_07000_32, bench_07000_hyper);
+bench!(8_000, bench_08000_naive, bench_08000_32, bench_08000_hyper);
+bench!(9_000, bench_09000_naive, bench_09000_32, bench_09000_hyper);
+bench!(10_000, bench_10000_naive, bench_10000_32, bench_10000_hyper);
+bench!(12_000, bench_12000_naive, bench_12000_32, bench_12000_hyper);
+bench!(14_000, bench_14000_naive, bench_14000_32, bench_14000_hyper);
+bench!(17_000, bench_17000_naive, bench_17000_32, bench_17000_hyper);
+bench!(21_000, bench_21000_naive, bench_21000_32, bench_21000_hyper);
+bench!(25_000, bench_25000_naive, bench_25000_32, bench_25000_hyper);
+bench!(30_000, bench_30000_naive, bench_30000_32, bench_30000_hyper);
 
-bench!(100000, bench_big_0100000_naive, bench_big_0100000_32, bench_big_0100000_hyper);
-bench!(1000000, bench_big_1000000_naive, bench_big_1000000_32, bench_big_1000000_hyper);
+bench!(100_000, bench_big_0100000_naive, bench_big_0100000_32, bench_big_0100000_hyper);
+bench!(1_000_000, bench_big_1000000_naive, bench_big_1000000_32, bench_big_1000000_hyper);
 
 benchmark_group!(bench,
     bench_00000_naive, bench_00000_32, bench_00000_hyper,
