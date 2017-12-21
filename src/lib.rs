@@ -20,6 +20,7 @@ trait ByteChunk: Copy {
     fn splat(byte: u8) -> Self::Splat;
     fn from_splat(splat: Self::Splat) -> Self;
     fn bytewise_equal(self, other: Self::Splat) -> Self;
+    fn mask(self, other: Self::Splat) -> Self;
     fn increment(self, incr: Self) -> Self;
     fn sum(&self) -> usize;
 }
@@ -34,6 +35,10 @@ impl ByteChunk for usize {
 
     fn from_splat(splat: Self) -> Self {
         splat
+    }
+
+    fn mask(self, other: Self) -> Self {
+        self & other
     }
 
     fn bytewise_equal(self, other: Self) -> Self {
@@ -72,6 +77,10 @@ impl ByteChunk for u8x16 {
         splat
     }
 
+    fn mask(self, other: Self) -> Self {
+        self & other
+    }
+
     fn bytewise_equal(self, other: Self) -> Self {
         self.eq(other).to_repr().to_u8()
     }
@@ -100,6 +109,10 @@ impl ByteChunk for u8x32 {
 
     fn from_splat(splat: Self) -> Self {
         splat
+    }
+
+    fn mask(self, other: Self) -> Self {
+        self & other
     }
 
     fn bytewise_equal(self, other: Self) -> Self {
@@ -134,6 +147,13 @@ impl<T> ByteChunk for [T; 4]
 
     fn from_splat(splat: T) -> Self {
         [splat, splat, splat, splat]
+    }
+
+    fn mask(mut self, other: Self::Splat) -> Self {
+        for t in self[..].iter_mut() {
+            *t = t.mask(other);
+        }
+        self
     }
 
     fn bytewise_equal(mut self, needles: Self::Splat) -> Self {
@@ -274,3 +294,99 @@ pub fn naive_count_32(haystack: &[u8], needle: u8) -> usize {
 pub fn naive_count(haystack: &[u8], needle: u8) -> usize {
     haystack.iter().fold(0, |n, c| n + (*c == needle) as usize)
 }
+
+
+fn chunk_num_chars<Chunk: ByteChunk>(haystack: &[Chunk]) -> usize {
+    let zero = Chunk::splat(0);
+    let needles = Chunk::splat(0b10_000000);
+    let mask = Chunk::splat(0b11_000000);
+    let mut count = 0;
+    let mut i = 0;
+
+    while i < haystack.len() {
+        let mut counts = Chunk::from_splat(zero);
+
+        let end = cmp::min(i + 255, haystack.len());
+        for &chunk in &haystack[i..end] {
+            counts = counts.increment(chunk.mask(mask).bytewise_equal(needles));
+        }
+        i = end;
+
+        count += counts.sum();
+    }
+
+    count
+}
+
+fn num_chars_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize,
+                                                    group_above: usize,
+                                                    haystack: &[u8])
+                                                    -> usize {
+    // Extract pre/post so naive_count is only inlined once.
+    let len = haystack.len();
+    let mut count = len;
+    let unchunked = if len < naive_below {
+        [haystack, &haystack[0..0]]
+    } else if len > group_above {
+        let (pre, mid, post) = chunk_align::<[Chunk; 4]>(haystack);
+        count -= chunk_num_chars(mid);
+        [pre, post]
+    } else {
+        let (pre, mid, post) = chunk_align::<Chunk>(haystack);
+        count -= chunk_num_chars(mid);
+        [pre, post]
+    };
+
+    for &slice in &unchunked {
+        count -= slice.len();
+        count += naive_num_chars(slice);
+    }
+
+    count
+}
+
+
+/// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, fast
+///
+/// This function is safe to use on any byte array, valid UTF-8 or not,
+/// but the output is only meaningful for well-formed UTF-8.
+///
+/// # Example
+///
+/// ```
+/// let swordfish = "メカジキ";
+/// let char_count = bytecount::naive_num_chars(swordfish.as_bytes());
+/// assert_eq!(char_count, 4);
+/// ```
+#[cfg(not(feature = "simd-accel"))]
+pub fn num_chars(haystack: &[u8]) -> usize {
+    // Never use [usize; 4]
+    num_chars_generic::<usize>(32, usize::MAX, haystack)
+}
+
+#[cfg(all(feature = "simd-accel", not(feature = "avx-accel")))]
+pub fn num_chars(haystack: &[u8]) -> usize {
+    num_chars_generic::<u8x16>(32, 4096, haystack)
+}
+
+#[cfg(feature = "avx-accel")]
+pub fn num_chars(haystack: &[u8]) -> usize {
+    num_chars_generic::<u8x32>(64, 4096, haystack)
+}
+
+/// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, simple
+///
+/// This function is safe to use on any byte array, valid UTF-8 or not,
+/// but the output is only meaningful for well-formed UTF-8.
+///
+/// # Example
+///
+/// ```
+/// let swordfish = "メカジキ";
+/// let char_count = bytecount::naive_num_chars(swordfish.as_bytes());
+/// assert_eq!(char_count, 4);
+/// ```
+pub fn naive_num_chars(haystack: &[u8]) -> usize {
+    haystack.iter().filter(|&&byte| (byte >> 6) != 0b10).count()
+}
+

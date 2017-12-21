@@ -4,7 +4,10 @@ extern crate quickcheck;
 extern crate rand;
 
 use std::iter;
-use bytecount::{count, naive_count};
+use bytecount::{
+    count, naive_count,
+    num_chars, naive_num_chars,
+};
 use rand::Rng;
 
 fn random_bytes(len: usize) -> Vec<u8> {
@@ -12,21 +15,21 @@ fn random_bytes(len: usize) -> Vec<u8> {
 }
 
 quickcheck! {
-    fn check_counts_correctly(x: (Vec<u8>, u8)) -> bool {
+    fn check_count_correct(x: (Vec<u8>, u8)) -> bool {
         let (haystack, needle) = x;
-        count(&haystack.clone(), needle) == naive_count(&haystack, needle)
+        count(&haystack, needle) == naive_count(&haystack, needle)
     }
 }
 
 #[test]
-fn check_large() {
+fn check_count_large() {
     let haystack = vec![0u8; 10_000_000];
     assert_eq!(naive_count(&haystack, 0), count(&haystack, 0));
     assert_eq!(naive_count(&haystack, 1), count(&haystack, 1));
 }
 
 #[test]
-fn check_large_rand() {
+fn check_count_large_rand() {
     let haystack = random_bytes(100_000);
     for i in (0..255).chain(iter::once(255)) {
         assert_eq!(naive_count(&haystack, i), count(&haystack, i));
@@ -34,16 +37,40 @@ fn check_large_rand() {
 }
 
 #[test]
-fn check_some() {
+fn check_count_some() {
     let haystack = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 68];
     let needle = 68;
     assert_eq!(count(&haystack, needle), naive_count(&haystack, needle));
 }
 
 #[test]
-fn check_overflow() {
+fn check_count_overflow() {
     let haystack = vec![0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     let needle = 2;
-    assert_eq!(count(&haystack[0..], needle),
-               naive_count(&haystack[0..], needle));
+    assert_eq!(count(&haystack, needle), naive_count(&haystack, needle));
+}
+
+quickcheck! {
+    fn check_num_chars_correct(haystack: Vec<u8>) -> bool {
+        num_chars(&haystack) == naive_num_chars(&haystack)
+    }
+}
+
+#[test]
+fn check_num_chars_large() {
+    let haystack = vec![0u8; 10_000_000];
+    assert_eq!(naive_num_chars(&haystack), num_chars(&haystack));
+    assert_eq!(naive_num_chars(&haystack), num_chars(&haystack));
+}
+
+#[test]
+fn check_num_chars_some() {
+    let haystack = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 68];
+    assert_eq!(num_chars(&haystack), naive_num_chars(&haystack));
+}
+
+#[test]
+fn check_num_chars_overflow() {
+    let haystack = vec![0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    assert_eq!(num_chars(&haystack), naive_num_chars(&haystack));
 }
