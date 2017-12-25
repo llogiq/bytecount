@@ -20,8 +20,7 @@ trait ByteChunk: Copy {
     fn splat(byte: u8) -> Self::Splat;
     fn from_splat(splat: Self::Splat) -> Self;
     fn bytewise_equal(self, other: Self::Splat) -> Self;
-    fn mask(self, other: Self::Splat) -> Self;
-    fn utf8(self) -> Self;
+    fn is_leading_utf8_byte(self) -> Self;
     fn increment(self, incr: Self) -> Self;
     fn sum(&self) -> usize;
 }
@@ -38,11 +37,7 @@ impl ByteChunk for usize {
         splat
     }
 
-    fn mask(self, other: Self) -> Self {
-        self & other
-    }
-
-    fn utf8(self) -> Self {
+    fn is_leading_utf8_byte(self) -> Self {
         // a leading UTF-8 byte is one which does not start with the bits 10.
         ((!self >> 7) | (self >> 6)) & Self::splat(1)
     }
@@ -83,11 +78,7 @@ impl ByteChunk for u8x16 {
         splat
     }
 
-    fn mask(self, other: Self::Splat) -> Self {
-        self & other
-    }
-
-    fn utf8(self) -> Self {
+    fn is_leading_utf8_byte(self) -> Self {
         (self & Self::splat(0b1100_0000)).ne(Self::splat(0b1000_0000)).to_repr().to_u8()
     }
 
@@ -121,11 +112,7 @@ impl ByteChunk for u8x32 {
         splat
     }
 
-    fn mask(self, other: Self::Splat) -> Self {
-        self & other
-    }
-
-    fn utf8(self) -> Self {
+    fn is_leading_utf8_byte(self) -> Self {
         (self & Self::splat(0b1100_0000)).ne(Self::splat(0b1000_0000)).to_repr().to_u8()
     }
 
@@ -163,16 +150,9 @@ impl<T> ByteChunk for [T; 4]
         [splat, splat, splat, splat]
     }
 
-    fn utf8(mut self) -> Self {
+    fn is_leading_utf8_byte(mut self) -> Self {
         for t in self[..].iter_mut() {
-            *t = t.utf8();
-        }
-        self
-    }
-
-    fn mask(mut self, other: Self::Splat) -> Self {
-        for t in self[..].iter_mut() {
-            *t = t.mask(other);
+            *t = t.is_leading_utf8_byte();
         }
         self
     }
@@ -246,12 +226,12 @@ fn count_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize,
     let len = haystack.len();
     let unchunked = if len < naive_below {
         [haystack, &haystack[0..0]]
-    } else if len > group_above {
-        let (pre, mid, post) = chunk_align::<[Chunk; 4]>(haystack);
+    } else if len <= group_above {
+        let (pre, mid, post) = chunk_align::<Chunk>(haystack);
         count += chunk_count(mid, needle);
         [pre, post]
     } else {
-        let (pre, mid, post) = chunk_align::<Chunk>(haystack);
+        let (pre, mid, post) = chunk_align::<[Chunk; 4]>(haystack);
         count += chunk_count(mid, needle);
         [pre, post]
     };
@@ -324,7 +304,7 @@ fn chunk_num_chars<Chunk: ByteChunk>(haystack: &[Chunk]) -> usize {
         let mut counts = Chunk::from_splat(zero);
         let end = cmp::min(i + 255, haystack.len());
         for &chunk in &haystack[i..end] {
-            counts = counts.increment(chunk.utf8());
+            counts = counts.increment(chunk.is_leading_utf8_byte());
         }
         i = end;
         count += counts.sum();
