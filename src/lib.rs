@@ -276,7 +276,7 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
 ///
 /// ```
 /// let s = b"This is yet another Text with spaces";
-/// let number_of_spaces = bytecount::naive_count(s, b' ');
+/// let number_of_spaces = bytecount::naive_count_32(s, b' ');
 /// assert_eq!(number_of_spaces, 6);
 /// ```
 pub fn naive_count_32(haystack: &[u8], needle: u8) -> usize {
@@ -346,7 +346,7 @@ fn num_chars_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize,
 ///
 /// ```
 /// let swordfish = "メカジキ";
-/// let char_count = bytecount::naive_num_chars(swordfish.as_bytes());
+/// let char_count = bytecount::num_chars(swordfish.as_bytes());
 /// assert_eq!(char_count, 4);
 /// ```
 #[cfg(not(feature = "simd-accel"))]
