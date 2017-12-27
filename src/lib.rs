@@ -1,6 +1,39 @@
-//! Counting occurrences of a byte in a slice
+//! Counting occurrences of a byte or UTF8 chars in a slice, fast.
+//!
+//! This crate has the [`count`](fn.count.html) method to count byte
+//! occurrences (for example newlines) in a larger `&[u8]` slice.
+//!
+//! For example:
+//!
+//! ```rust
+//! assert_eq!(5, bytecount::count(b"Hello, this is the bytecount crate!", b' '));
+//! ```
+//!
+//! Also there is a [`num_chars`](fn.num_chars.html) method to count
+//! the number of UTF8 characters in a slice. It will work the same as
+//! `str::chars().count()` for byte slices of correct UTF-8 character
+//! sequences. The result will likely be off for invalid sequences,
+//! although the result is guaranteed to be between `0` and
+//! `[_]::len()`, inclusive.
+//!
+//! Example:
+//!
+//! ```rust
+//!# use bytecount::num_chars;
+//! let sequence = "Wenn ich ein Vöglein wär, flög ich zu Dir!";
+//! assert_eq!(sequence.chars().count(),
+//!            bytecount::num_chars(&sequence.bytes().collect::<Vec<u8>>()));
+//! ```
+//!
+//! For completeness and easy comparison, the "naive" versions of both
+//! count and num_chars are provided. Those are also faster if used on
+//! predominantly small strings. The
+//! [`naive_count_32`](fn.naive_count_32.html) method can be faster
+//! still on small strings.
 
 #![no_std]
+
+#![deny(missing_docs)]
 
 #[cfg(feature = "simd-accel")]
 extern crate simd;
@@ -259,11 +292,29 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
     count_generic::<usize>(32, usize::MAX, haystack, needle)
 }
 
+/// Count occurrences of a byte in a slice of bytes, fast
+///
+/// # Examples
+///
+/// ```
+/// let s = b"This is a Text with spaces";
+/// let number_of_spaces = bytecount::count(s, b' ');
+/// assert_eq!(number_of_spaces, 5);
+/// ```
 #[cfg(all(feature = "simd-accel", not(feature = "avx-accel")))]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
     count_generic::<u8x16>(32, 4096, haystack, needle)
 }
 
+/// Count occurrences of a byte in a slice of bytes, fast
+///
+/// # Examples
+///
+/// ```
+/// let s = b"This is a Text with spaces";
+/// let number_of_spaces = bytecount::count(s, b' ');
+/// assert_eq!(number_of_spaces, 5);
+/// ```
 #[cfg(feature = "avx-accel")]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
     count_generic::<u8x32>(64, 4096, haystack, needle)
@@ -355,11 +406,35 @@ pub fn num_chars(haystack: &[u8]) -> usize {
     num_chars_generic::<usize>(32, usize::MAX, haystack)
 }
 
+/// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, fast
+///
+/// This function is safe to use on any byte array, valid UTF-8 or not,
+/// but the output is only meaningful for well-formed UTF-8.
+///
+/// # Example
+///
+/// ```
+/// let swordfish = "メカジキ";
+/// let char_count = bytecount::num_chars(swordfish.as_bytes());
+/// assert_eq!(char_count, 4);
+/// ```
 #[cfg(all(feature = "simd-accel", not(feature = "avx-accel")))]
 pub fn num_chars(haystack: &[u8]) -> usize {
     num_chars_generic::<u8x16>(32, 4096, haystack)
 }
 
+/// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, fast
+///
+/// This function is safe to use on any byte array, valid UTF-8 or not,
+/// but the output is only meaningful for well-formed UTF-8.
+///
+/// # Example
+///
+/// ```
+/// let swordfish = "メカジキ";
+/// let char_count = bytecount::num_chars(swordfish.as_bytes());
+/// assert_eq!(char_count, 4);
+/// ```
 #[cfg(feature = "avx-accel")]
 pub fn num_chars(haystack: &[u8]) -> usize {
     num_chars_generic::<u8x32>(64, 4096, haystack)
