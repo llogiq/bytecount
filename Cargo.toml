@@ -23,7 +23,7 @@ simd = { version = "0.2.0", optional = true }
 
 [dev-dependencies]
 quickcheck = "0.5"
-rand = "0.3.16"
+rand = "0.4"
 bencher = "0.1.4"
 
 [[bench]]
