@@ -1,8 +1,8 @@
 [package]
 authors = ["Andre Bogus <bogusandre@gmail.de>", "Joshua Landau <joshua@landau.ws>"]
-description = "count occurrences of a byte in a byte slice, fast"
+description = "count occurrences of a given byte, or the number of UTF-8 code points, in a byte slice, fast"
 name = "bytecount"
-version = "0.2.0"
+version = "0.3.0"
 license = "Apache-2.0/MIT"
 repository = "https://github.com/llogiq/bytecount"
 categories = ["algorithms", "no-std"]
