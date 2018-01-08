@@ -1,4 +1,5 @@
-//! Counting occurrences of a byte or UTF8 chars in a slice, fast.
+//! count occurrences of a given byte, or the number of UTF-8 code points, in a
+//! byte slice, fast.
 //!
 //! This crate has the [`count`](fn.count.html) method to count byte
 //! occurrences (for example newlines) in a larger `&[u8]` slice.
