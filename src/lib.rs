@@ -37,17 +37,11 @@
 #![deny(missing_docs)]
 
 #[cfg(feature = "simd-accel")]
-extern crate simd;
-
-use core::{cmp, mem, slice, usize};
-
+extern crate faster;
 #[cfg(feature = "simd-accel")]
-use simd::u8x16;
-#[cfg(feature = "avx-accel")]
-use simd::x86::sse2::Sse2U8x16;
-#[cfg(feature = "avx-accel")]
-use simd::x86::avx::{LowHigh128, u8x32};
+use faster::*;
 
+use core::{cmp, mem, ops, slice, usize};
 
 trait ByteChunk: Copy {
     type Splat: Copy;
@@ -99,78 +93,6 @@ impl ByteChunk for usize {
         pair_sum.wrapping_mul(every_other_byte_lo) >> ((mem::size_of::<usize>() - 2) * 8)
     }
 }
-
-#[cfg(feature = "simd-accel")]
-impl ByteChunk for u8x16 {
-    type Splat = Self;
-
-    fn splat(byte: u8) -> Self {
-        Self::splat(byte)
-    }
-
-    fn from_splat(splat: Self) -> Self {
-        splat
-    }
-
-    fn is_leading_utf8_byte(self) -> Self {
-        (self & Self::splat(0b1100_0000)).ne(Self::splat(0b1000_0000)).to_repr().to_u8()
-    }
-
-    fn bytewise_equal(self, other: Self) -> Self {
-        self.eq(other).to_repr().to_u8()
-    }
-
-    fn increment(self, incr: Self) -> Self {
-        // incr on -1
-        self - incr
-    }
-
-    fn sum(&self) -> usize {
-        let mut count = 0;
-        for i in 0..16 {
-            count += self.extract(i) as usize;
-        }
-        count
-    }
-}
-
-#[cfg(feature = "avx-accel")]
-impl ByteChunk for u8x32 {
-    type Splat = Self;
-
-    fn splat(byte: u8) -> Self {
-        Self::splat(byte)
-    }
-
-    fn from_splat(splat: Self) -> Self {
-        splat
-    }
-
-    fn is_leading_utf8_byte(self) -> Self {
-        (self & Self::splat(0b1100_0000)).ne(Self::splat(0b1000_0000)).to_repr().to_u8()
-    }
-
-    fn bytewise_equal(self, other: Self) -> Self {
-        self.eq(other).to_repr().to_u8()
-    }
-
-    fn increment(self, incr: Self) -> Self {
-        // incr on -1
-        self - incr
-    }
-
-    fn sum(&self) -> usize {
-        let zero = u8x16::splat(0);
-        let sad_lo = self.low().sad(zero);
-        let sad_hi = self.high().sad(zero);
-
-        let mut count = 0;
-        count += (sad_lo.extract(0) + sad_lo.extract(1)) as usize;
-        count += (sad_hi.extract(0) + sad_hi.extract(1)) as usize;
-        count
-    }
-}
-
 
 fn chunk_align<Chunk: ByteChunk>(x: &[u8]) -> (&[u8], &[Chunk], &[u8]) {
     let align = mem::size_of::<Chunk>();
@@ -254,23 +176,21 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
 /// let number_of_spaces = bytecount::count(s, b' ');
 /// assert_eq!(number_of_spaces, 5);
 /// ```
-#[cfg(all(feature = "simd-accel", not(feature = "avx-accel")))]
+#[cfg(feature = "simd-accel")]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
-    count_generic::<u8x16>(32, haystack, needle)
-}
-
-/// Count occurrences of a byte in a slice of bytes, fast
-///
-/// # Examples
-///
-/// ```
-/// let s = b"This is a Text with spaces";
-/// let number_of_spaces = bytecount::count(s, b' ');
-/// assert_eq!(number_of_spaces, 5);
-/// ```
-#[cfg(feature = "avx-accel")]
-pub fn count(haystack: &[u8], needle: u8) -> usize {
-    count_generic::<u8x32>(64, haystack, needle)
+    let mut ret: usize = 0;
+    let mut i = 0;
+    let mut acc = u8s(0);
+    haystack.simd_iter().simd_for_each(u8s(needle.overflowing_add(1).0), |v| {
+        i += 1;
+        acc += (PackedEq::eq(&v, &u8s(needle)).be_u8s() & u8s(0x01));
+        if i == 255 {
+            ret += acc.scalar_reduce(0, |acc, s| acc + (s as usize));
+            acc = u8s(0);
+            i = 0;
+        }
+    });
+    ret + acc.scalar_reduce(0, |acc, s| acc + (s as usize))
 }
 
 /// Count up to `(2^32)-1` occurrences of a byte in a slice
@@ -333,7 +253,6 @@ fn num_chars_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize, haysta
     count
 }
 
-
 /// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, fast
 ///
 /// This function is safe to use on any byte array, valid UTF-8 or not,
@@ -346,45 +265,17 @@ fn num_chars_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize, haysta
 /// let char_count = bytecount::num_chars(swordfish.as_bytes());
 /// assert_eq!(char_count, 4);
 /// ```
-#[cfg(not(feature = "simd-accel"))]
 pub fn num_chars(haystack: &[u8]) -> usize {
     // Never use [usize; 4]
     num_chars_generic::<usize>(32, haystack)
 }
 
-/// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, fast
-///
-/// This function is safe to use on any byte array, valid UTF-8 or not,
-/// but the output is only meaningful for well-formed UTF-8.
-///
-/// # Example
-///
-/// ```
-/// let swordfish = "メカジキ";
-/// let char_count = bytecount::num_chars(swordfish.as_bytes());
-/// assert_eq!(char_count, 4);
-/// ```
-#[cfg(all(feature = "simd-accel", not(feature = "avx-accel")))]
+#[cfg(feature = "simd-accel")]
 pub fn num_chars(haystack: &[u8]) -> usize {
-    num_chars_generic::<u8x16>(32, haystack)
+
+
 }
 
-/// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, fast
-///
-/// This function is safe to use on any byte array, valid UTF-8 or not,
-/// but the output is only meaningful for well-formed UTF-8.
-///
-/// # Example
-///
-/// ```
-/// let swordfish = "メカジキ";
-/// let char_count = bytecount::num_chars(swordfish.as_bytes());
-/// assert_eq!(char_count, 4);
-/// ```
-#[cfg(feature = "avx-accel")]
-pub fn num_chars(haystack: &[u8]) -> usize {
-    num_chars_generic::<u8x32>(64, haystack)
-}
 
 /// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, simple
 ///
