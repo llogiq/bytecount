@@ -178,19 +178,23 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
 /// ```
 #[cfg(feature = "simd-accel")]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
-    let mut ret: usize = 0;
-    let mut i = 0;
-    let mut acc = u8s(0);
-    haystack.simd_iter().simd_for_each(u8s(needle.overflowing_add(1).0), |v| {
-        i += 1;
-        acc += (PackedEq::eq(&v, &u8s(needle)).be_u8s() & u8s(0x01));
-        if i == 255 {
-            ret += acc.scalar_reduce(0, |acc, s| acc + (s as usize));
-            acc = u8s(0);
-            i = 0;
-        }
-    });
-    ret + acc.scalar_reduce(0, |acc, s| acc + (s as usize))
+    if haystack.len() < 100 {
+        naive_count(haystack, needle)
+    } else {
+        let mut ret = 0;
+        let mut i = 0;
+        let mut acc = u8s(0);
+        haystack.simd_iter().simd_for_each(u8s(needle.overflowing_add(1).0), |v| {
+            i += 1;
+            acc += (PackedEq::eq(&v, &u8s(needle)).be_u8s() & u8s(0x01));
+            if i == 255 {
+                ret += acc.scalar_reduce(0, |acc, s| acc + (s as usize));
+                acc = u8s(0);
+                i = 0;
+            }
+        });
+        ret + acc.scalar_reduce(0, |acc, s| acc + (s as usize))
+    }
 }
 
 /// Count up to `(2^32)-1` occurrences of a byte in a slice
