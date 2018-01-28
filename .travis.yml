@@ -30,8 +30,13 @@ matrix:
     - rust: nightly
       env:
         - ARCH=x86_64
-        - FEATURES="--features avx-accel"
-        - RUSTFLAGS="-C target-feature=+avx"
+        - FEATURES="--features simd-accel"
+        - RUSTFLAGS="-C target-feature=+sse4.2"
+    - rust: nightly
+      env:
+        - ARCH=x86_64
+        - FEATURES="--features simd-accel"
+        - RUSTFLAGS="-C target-cpu=native"
 addons:
   apt:
     packages:
