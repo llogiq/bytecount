@@ -39,7 +39,7 @@
 #[cfg(feature = "simd-accel")]
 extern crate simd;
 
-use core::{cmp, mem, ops, slice, usize};
+use core::{cmp, mem, slice, usize};
 
 #[cfg(feature = "simd-accel")]
 use simd::u8x16;
@@ -171,45 +171,6 @@ impl ByteChunk for u8x32 {
     }
 }
 
-impl<T> ByteChunk for [T; 4]
-    where T: ByteChunk<Splat = T>
-{
-    type Splat = T;
-
-    fn splat(byte: u8) -> T {
-        T::splat(byte)
-    }
-
-    fn from_splat(splat: T) -> Self {
-        [splat, splat, splat, splat]
-    }
-
-    fn is_leading_utf8_byte(mut self) -> Self {
-        for t in self[..].iter_mut() {
-            *t = t.is_leading_utf8_byte();
-        }
-        self
-    }
-
-    fn bytewise_equal(mut self, needles: Self::Splat) -> Self {
-        for t in self[..].iter_mut() {
-            *t = t.bytewise_equal(needles);
-        }
-        self
-    }
-
-    fn increment(self, incr: Self) -> Self {
-        [self[0].increment(incr[0]),
-         self[1].increment(incr[1]),
-         self[2].increment(incr[2]),
-         self[3].increment(incr[3])]
-    }
-
-    fn sum(&self) -> usize {
-        self[..].iter().map(ByteChunk::sum).fold(0, ops::Add::add)
-    }
-}
-
 
 fn chunk_align<Chunk: ByteChunk>(x: &[u8]) -> (&[u8], &[Chunk], &[u8]) {
     let align = mem::size_of::<Chunk>();
@@ -249,23 +210,15 @@ fn chunk_count<Chunk: ByteChunk>(haystack: &[Chunk], needle: u8) -> usize {
     count
 }
 
-fn count_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize,
-                                                  group_above: usize,
-                                                  haystack: &[u8],
-                                                  needle: u8)
-                                                  -> usize {
+fn count_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize, haystack: &[u8], needle: u8) -> usize {
     let mut count = 0;
 
     // Extract pre/post so naive_count is only inlined once.
     let len = haystack.len();
     let unchunked = if len < naive_below {
         [haystack, &haystack[0..0]]
-    } else if len <= group_above {
-        let (pre, mid, post) = chunk_align::<Chunk>(haystack);
-        count += chunk_count(mid, needle);
-        [pre, post]
     } else {
-        let (pre, mid, post) = chunk_align::<[Chunk; 4]>(haystack);
+        let (pre, mid, post) = chunk_align::<Chunk>(haystack);
         count += chunk_count(mid, needle);
         [pre, post]
     };
@@ -289,8 +242,7 @@ fn count_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize,
 /// ```
 #[cfg(not(feature = "simd-accel"))]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
-    // Never use [usize; 4]
-    count_generic::<usize>(32, usize::MAX, haystack, needle)
+    count_generic::<usize>(32, haystack, needle)
 }
 
 /// Count occurrences of a byte in a slice of bytes, fast
@@ -304,7 +256,7 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
 /// ```
 #[cfg(all(feature = "simd-accel", not(feature = "avx-accel")))]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
-    count_generic::<u8x16>(32, 4096, haystack, needle)
+    count_generic::<u8x16>(32, haystack, needle)
 }
 
 /// Count occurrences of a byte in a slice of bytes, fast
@@ -318,7 +270,7 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
 /// ```
 #[cfg(feature = "avx-accel")]
 pub fn count(haystack: &[u8], needle: u8) -> usize {
-    count_generic::<u8x32>(64, 4096, haystack, needle)
+    count_generic::<u8x32>(64, haystack, needle)
 }
 
 /// Count up to `(2^32)-1` occurrences of a byte in a slice
@@ -364,21 +316,14 @@ fn chunk_num_chars<Chunk: ByteChunk>(haystack: &[Chunk]) -> usize {
     count
 }
 
-fn num_chars_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize,
-                                                    group_above: usize,
-                                                    haystack: &[u8])
-                                                    -> usize {
+fn num_chars_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize, haystack: &[u8]) -> usize {
     // Extract pre/post so naive_count is only inlined once.
     let len = haystack.len();
     let mut count = 0;
     let unchunked = if len < naive_below {
         [haystack, &haystack[0..0]]
-    } else if len <= group_above {
-        let (pre, mid, post) = chunk_align::<Chunk>(haystack);
-        count += chunk_num_chars(mid);
-        [pre, post]
     } else {
-        let (pre, mid, post) = chunk_align::<[Chunk; 4]>(haystack);
+        let (pre, mid, post) = chunk_align::<Chunk>(haystack);
         count += chunk_num_chars(mid);
         [pre, post]
     };
@@ -404,7 +349,7 @@ fn num_chars_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize,
 #[cfg(not(feature = "simd-accel"))]
 pub fn num_chars(haystack: &[u8]) -> usize {
     // Never use [usize; 4]
-    num_chars_generic::<usize>(32, usize::MAX, haystack)
+    num_chars_generic::<usize>(32, haystack)
 }
 
 /// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, fast
@@ -421,7 +366,7 @@ pub fn num_chars(haystack: &[u8]) -> usize {
 /// ```
 #[cfg(all(feature = "simd-accel", not(feature = "avx-accel")))]
 pub fn num_chars(haystack: &[u8]) -> usize {
-    num_chars_generic::<u8x16>(32, 4096, haystack)
+    num_chars_generic::<u8x16>(32, haystack)
 }
 
 /// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, fast
@@ -438,7 +383,7 @@ pub fn num_chars(haystack: &[u8]) -> usize {
 /// ```
 #[cfg(feature = "avx-accel")]
 pub fn num_chars(haystack: &[u8]) -> usize {
-    num_chars_generic::<u8x32>(64, 4096, haystack)
+    num_chars_generic::<u8x32>(64, haystack)
 }
 
 /// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, simple
