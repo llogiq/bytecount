@@ -182,18 +182,19 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
         naive_count(haystack, needle)
     } else {
         let mut ret = 0;
-        let mut i = 0;
-        let mut acc = u8s(0);
-        haystack.simd_iter().simd_for_each(u8s(needle.overflowing_add(1).0), |v| {
-            i += 1;
-            acc += (PackedEq::eq(&v, &u8s(needle)).be_u8s() & u8s(0x01));
-            if i == 255 {
-                ret += acc.scalar_reduce(0, |acc, s| acc + (s as usize));
-                acc = u8s(0);
-                i = 0;
-            }
-        });
-        ret + acc.scalar_reduce(0, |acc, s| acc + (s as usize))
+
+        for i in 0..haystack.len() / (u8s::WIDTH * 255) {
+            ret += (&haystack[i * u8s::WIDTH * 255..(i + 1) * u8s::WIDTH * 255])
+                .simd_iter()
+                .simd_reduce(u8s(0), u8s(needle.overflowing_add(1).0), |acc, v| {
+                    acc + (PackedEq::eq(&v, &u8s(needle)).be_u8s() & u8s(0x01))
+                }).scalar_reduce(0, |acc, s| acc + (s as usize));
+        }
+        ret + (&haystack[haystack.len() - haystack.len() % (u8s::WIDTH * 255)..])
+            .simd_iter()
+            .simd_reduce(u8s(0), u8s(needle.overflowing_add(1).0), |acc, v| {
+                acc + (PackedEq::eq(&v, &u8s(needle)).be_u8s() & u8s(0x01))
+            }).scalar_reduce(0, |acc, s| acc + (s as usize))
     }
 }
 
