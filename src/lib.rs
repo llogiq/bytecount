@@ -41,7 +41,7 @@ extern crate faster;
 #[cfg(feature = "simd-accel")]
 use faster::*;
 
-use core::{cmp, mem, ops, slice, usize};
+use core::{cmp, mem, slice, usize};
 
 trait ByteChunk: Copy {
     type Splat: Copy;
@@ -270,15 +270,33 @@ fn num_chars_generic<Chunk: ByteChunk<Splat = Chunk>>(naive_below: usize, haysta
 /// let char_count = bytecount::num_chars(swordfish.as_bytes());
 /// assert_eq!(char_count, 4);
 /// ```
+#[cfg(not(feature = "simd-accel"))]
 pub fn num_chars(haystack: &[u8]) -> usize {
     // Never use [usize; 4]
     num_chars_generic::<usize>(32, haystack)
 }
 
+/// f
 #[cfg(feature = "simd-accel")]
 pub fn num_chars(haystack: &[u8]) -> usize {
+    if haystack.len() < 100 {
+        naive_num_chars(haystack)
+    } else {
+        let mut ret = 0;
 
-
+        for i in 0..haystack.len() / (u8s::WIDTH * 255) {
+            ret += (&haystack[i * u8s::WIDTH * 255..(i + 1) * u8s::WIDTH * 255])
+                .simd_iter()
+                .simd_reduce(u8s(0), u8s(0), |acc, v| {
+                    acc + (PackedEq::eq(&(v & u8s(0xC0)), &u8s(0x80)).be_u8s() & u8s(0x01))
+                }).scalar_reduce(0, |acc, s| acc + (s as usize));
+        }
+        haystack.len() - ret - (&haystack[haystack.len() - haystack.len() % (u8s::WIDTH * 255)..])
+            .simd_iter()
+            .simd_reduce(u8s(0), u8s(0), |acc, v| {
+                acc + (PackedEq::eq(&(v & u8s(0xC0)), &u8s(0x80)).be_u8s() & u8s(0x01))
+            }).scalar_reduce(0, |acc, s| acc + (s as usize))
+    }
 }
 
 
