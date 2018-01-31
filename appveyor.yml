@@ -15,8 +15,7 @@ environment:
           FEATURES: "--features simd-accel"
         - TARGET: i686-pc-windows-gnu
           CHANNEL: nightly
-          FEATURES: "--features avx-accel"
-          RUSTFLAGS: "-C target-feature=+avx"
+          FEATURES: "--features simd-accel,target_feature"
         - TARGET: i686-pc-windows-msvc
           CHANNEL: stable
         - TARGET: i686-pc-windows-msvc
@@ -28,8 +27,7 @@ environment:
           FEATURES: "--features simd-accel"
         - TARGET: i686-pc-windows-msvc
           CHANNEL: nightly
-          FEATURES: "--features avx-accel"
-          RUSTFLAGS: "-C target-feature=+avx"
+          FEATURES: "--features simd-accel,target_feature"
         - TARGET: x86_64-pc-windows-gnu
           CHANNEL: stable
         - TARGET: x86_64-pc-windows-gnu
@@ -41,8 +39,7 @@ environment:
           FEATURES: "--features simd-accel"
         - TARGET: x86_64-pc-windows-gnu
           CHANNEL: nightly
-          FEATURES: "--features avx-accel"
-          RUSTFLAGS: "-C target-feature=+avx"
+          FEATURES: "--features simd-accel,target_feature"
         - TARGET: x86_64-pc-windows-msvc
           CHANNEL: stable
         - TARGET: x86_64-pc-windows-msvc
@@ -54,8 +51,7 @@ environment:
           FEATURES: "--features simd-accel"
         - TARGET: x86_64-pc-windows-msvc
           CHANNEL: nightly
-          FEATURES: "--features avx-accel"
-          RUSTFLAGS: "-C target-feature=+avx"
+          FEATURES: "--features simd-accel,target_feature"
 
 install:
     - curl -sSf -o rustup-init.exe https://win.rustup.rs/

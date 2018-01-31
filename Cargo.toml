@@ -15,11 +15,8 @@ appveyor = { repository = "llogiq/bytecount" }
 bench = false
 
 [features]
-avx-accel = ["simd-accel"]
-simd-accel = ["simd"]
-
-[dependencies]
-simd = { version = "0.2.0", optional = true }
+simd-accel = []
+target_feature = []
 
 [dev-dependencies]
 quickcheck = "0.6"
