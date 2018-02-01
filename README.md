@@ -28,28 +28,21 @@ fn main() {
 }
 ```
 
-bytecount supports two features to make use of modern CPU's features to speed up counting considerably. To allow your
-users to use them, add the following to your `Cargo.toml`:
+bytecount makes use of features in modern CPUs to speed up counting considerably. To use these features,
+add the following to your `Cargo.toml`:
 
 ```
 [features]
-avx-accel = ["bytecount/avx-accel"]
 simd-accel = ["bytecount/simd-accel"]
 ```
 
-Now your users can compile with SSE support (available on most modern x86_64 processors) using:
+Now your users can compile with SIMD support, regardless of processor type, using:
 
 ```
-cargo build --release --features simd-accel
+RUSTFLAGS="-C target-cpu=native" cargo build --release --features simd-accel
 ```
 
-Or even with AVX support (which likely requires compiling for the native target CPU):
-
-```
-RUSTFLAGS="-C target-cpu=native" cargo build --release --features "simd-accel avx-accel"
-```
-
-The algorithm is explained in depth
+The scalar algorithm is explained in depth
 [here](https://llogiq.github.io/2016/09/27/count.html).
 
 Note that for very short slices, the data parallelism will likely not win much performance gains. In those cases, a naive
