@@ -66,7 +66,8 @@ fn bench_num_chars(criterion: &mut Criterion) {
         COUNTS);
 }
 
-criterion_group!(count, bench_naive_count, bench_naive_count_32,
+criterion_group!(count_bench, bench_naive_count, bench_naive_count_32,
                  bench_count);
-criterion_group!(num_chars, bench_naive_num_chars, bench_num_chars);
-criterion_main!(count, num_chars);
+criterion_group!(num_chars_bench, bench_naive_num_chars,
+                 bench_num_chars);
+criterion_main!(count_bench, num_chars_bench);
