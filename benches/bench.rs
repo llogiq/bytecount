@@ -3,10 +3,9 @@ extern crate criterion;
 extern crate rand;
 extern crate bytecount;
 
-use std::borrow::Cow;
 use std::env;
 use rand::Rng;
-use criterion::{Bencher, Criterion};
+use criterion::{Bencher, Criterion, ParameterizedBenchmark};
 
 use bytecount::{
     count, naive_count, naive_count_32,
@@ -24,60 +23,49 @@ static COUNTS : &[usize] = &[0, 10, 20, 30, 40, 50, 60, 70, 80, 90,
     21_000, 25_000, 30_000, 100_000, 1_000_000];
 
 
-fn get_counts() -> Cow<'static, [usize]> {
+
+fn get_counts() -> Vec<usize> {
     env::var("COUNTS").map(
-            |s| Cow::Owned(s.split(',').map(
-            |n| str::parse::<usize>(n).unwrap()).collect()))
-        .unwrap_or(Cow::Borrowed(COUNTS))
+            |s| s.split(',').map(
+            |n| str::parse::<usize>(n).unwrap()).collect())
+        .unwrap_or(COUNTS.to_owned())
 }
 
-fn bench_naive_count(criterion: &mut Criterion) {
-    criterion.bench_function_over_inputs("naive_count",
-        |b: &mut Bencher, s: &&usize| {
-            let haystack =  random_bytes(**s);
-            b.iter(|| naive_count(&haystack, 10))
-        },
-        get_counts().iter());
-}
-
-fn bench_naive_count_32(criterion: &mut Criterion) {
-    criterion.bench_function_over_inputs("naive_count_32",
-        |b: &mut Bencher, s: &&usize| {
-            let haystack =  random_bytes(**s);
-            b.iter(|| naive_count_32(&haystack, 10))
-        },
-        get_counts().iter());
-}
-
-fn bench_count(criterion: &mut Criterion) {
-    criterion.bench_function_over_inputs("count",
-        |b: &mut Bencher, s: &&usize| {
-            let haystack =  random_bytes(**s);
-            b.iter(|| count(&haystack, 10))
-        },
-        get_counts().iter());
-}
-
-fn bench_naive_num_chars(criterion: &mut Criterion) {
-    criterion.bench_function_over_inputs("naive_num_chars",
-        |b: &mut Bencher, s: &&usize| {
-            let haystack =  random_bytes(**s);
-            b.iter(|| naive_num_chars(&haystack))
-        },
-        get_counts().iter());
+fn bench_counts(criterion: &mut Criterion) {
+    fn naive(b: &mut Bencher, s: &usize) {
+        let haystack =  random_bytes(*s);
+        b.iter(|| naive_count(&haystack, 10))
+    }
+    fn naive_32(b: &mut Bencher, s: &usize) {
+        let haystack =  random_bytes(*s);
+        b.iter(|| naive_count_32(&haystack, 10))
+    }
+    fn hyper(b: &mut Bencher, s: &usize) {
+        let haystack =  random_bytes(*s);
+        b.iter(|| count(&haystack, 10))
+    }
+    let counts = get_counts();
+    criterion.bench("counts",
+        ParameterizedBenchmark::new("naive", naive, counts)
+            .with_function("naive_32", naive_32)
+            .with_function("hyper", hyper));
 }
 
 fn bench_num_chars(criterion: &mut Criterion) {
-    criterion.bench_function_over_inputs("num_chars",
-        |b: &mut Bencher, s: &&usize| {
-            let haystack =  random_bytes(**s);
-            b.iter(|| num_chars(&haystack))
-        },
-        get_counts().iter());
+    fn naive(b: &mut Bencher, s: &usize) {
+        let haystack =  random_bytes(*s);
+        b.iter(|| naive_num_chars(&haystack))
+    }
+    fn hyper(b: &mut Bencher, s: &usize) {
+        let haystack =  random_bytes(*s);
+        b.iter(|| num_chars(&haystack))
+    }
+    let counts = get_counts();
+    criterion.bench("num_chars",
+        ParameterizedBenchmark::new("naive", naive, counts)
+            .with_function("hyper", hyper));
 }
 
-criterion_group!(count_bench, bench_naive_count, bench_naive_count_32,
-                 bench_count);
-criterion_group!(num_chars_bench, bench_naive_num_chars,
-                 bench_num_chars);
+criterion_group!(count_bench, bench_counts);
+criterion_group!(num_chars_bench, bench_num_chars);
 criterion_main!(count_bench, num_chars_bench);
