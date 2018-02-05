@@ -3,6 +3,8 @@ extern crate criterion;
 extern crate rand;
 extern crate bytecount;
 
+use std::borrow::Cow;
+use std::env;
 use rand::Rng;
 use criterion::{Bencher, Criterion};
 
@@ -21,13 +23,21 @@ static COUNTS : &[usize] = &[0, 10, 20, 30, 40, 50, 60, 70, 80, 90,
     5_000, 6_000, 7_000, 8_000, 9_000, 10_000, 12_000, 14_000, 17_000,
     21_000, 25_000, 30_000, 100_000, 1_000_000];
 
+
+fn get_counts() -> Cow<'static, [usize]> {
+    env::var("COUNTS").map(
+            |s| Cow::Owned(s.split(',').map(
+            |n| str::parse::<usize>(n).unwrap()).collect()))
+        .unwrap_or(Cow::Borrowed(COUNTS))
+}
+
 fn bench_naive_count(criterion: &mut Criterion) {
     criterion.bench_function_over_inputs("naive_count",
         |b: &mut Bencher, s: &&usize| {
             let haystack =  random_bytes(**s);
             b.iter(|| naive_count(&haystack, 10))
         },
-        COUNTS);
+        get_counts().iter());
 }
 
 fn bench_naive_count_32(criterion: &mut Criterion) {
@@ -36,7 +46,7 @@ fn bench_naive_count_32(criterion: &mut Criterion) {
             let haystack =  random_bytes(**s);
             b.iter(|| naive_count_32(&haystack, 10))
         },
-        COUNTS);
+        get_counts().iter());
 }
 
 fn bench_count(criterion: &mut Criterion) {
@@ -45,7 +55,7 @@ fn bench_count(criterion: &mut Criterion) {
             let haystack =  random_bytes(**s);
             b.iter(|| count(&haystack, 10))
         },
-        COUNTS);
+        get_counts().iter());
 }
 
 fn bench_naive_num_chars(criterion: &mut Criterion) {
@@ -54,7 +64,7 @@ fn bench_naive_num_chars(criterion: &mut Criterion) {
             let haystack =  random_bytes(**s);
             b.iter(|| naive_num_chars(&haystack))
         },
-        COUNTS);
+        get_counts().iter());
 }
 
 fn bench_num_chars(criterion: &mut Criterion) {
@@ -63,7 +73,7 @@ fn bench_num_chars(criterion: &mut Criterion) {
             let haystack =  random_bytes(**s);
             b.iter(|| num_chars(&haystack))
         },
-        COUNTS);
+        get_counts().iter());
 }
 
 criterion_group!(count_bench, bench_naive_count, bench_naive_count_32,
