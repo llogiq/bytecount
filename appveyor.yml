@@ -75,5 +75,5 @@ test_script:
     - echo RUSTFLAGS=%RUSTFLAGS%
     - echo FEATURES=%FEATURES%
     - cargo test --target %TARGET% %FEATURES%
-      set COUNTS="0,10,1000,100000,10000000"
+      set COUNTS="0,10,1000,100000"
     - cargo bench --target %TARGET% %FEATURES%
