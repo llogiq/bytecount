@@ -40,4 +40,4 @@ script: |
   echo FEATURES=$FEATURES
   echo RUSTFLAGS=$RUSTFLAGS
   curl -sSL https://raw.githubusercontent.com/carllerche/travis-rust-matrix/master/test | bash
-  cargo test $FEATURES && cargo bench $FEATURES
+  cargo test --release $FEATURES && COUNTS="0,10,1000,100000,10000000" cargo bench $FEATURES

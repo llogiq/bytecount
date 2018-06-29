@@ -6,6 +6,7 @@ version = "0.3.1"
 license = "Apache-2.0/MIT"
 repository = "https://github.com/llogiq/bytecount"
 categories = ["algorithms", "no-std"]
+readme = "README.md"
 
 [badges]
 travis-ci = { repository = "llogiq/bytecount" }
@@ -21,9 +22,8 @@ target_feature = []
 [dev-dependencies]
 quickcheck = "0.6"
 rand = "0.4"
-bencher = "0.1.4"
+criterion = { git = "https://github.com/japaric/criterion.rs", default-features = false }
 
 [[bench]]
 name = "bench"
-path = "benches/bench.rs"
 harness = false

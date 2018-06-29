@@ -3,6 +3,7 @@ environment:
         PROJECT_NAME: bytecount
         FEATURES: ""
         RUSTFLAGS: ""
+        COUNTS: "0,10,1000,100000"
     matrix:
         - TARGET: i686-pc-windows-gnu
           CHANNEL: stable
@@ -72,3 +73,4 @@ test_script:
     - echo FEATURES=%FEATURES%
     - cargo test --target %TARGET% %FEATURES%
     - cargo bench --target %TARGET% %FEATURES%
+
