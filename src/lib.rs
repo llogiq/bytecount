@@ -178,12 +178,17 @@ fn chunk_align<Chunk: ByteChunk>(x: &[u8]) -> (&[u8], &[Chunk], &[u8]) {
     let offset_ptr = (x.as_ptr() as usize) % align;
     let offset_end = (x.as_ptr() as usize + x.len()) % align;
 
+    let d1 = (align - offset_ptr) % align; // `offset_ptr` might be 0, then `d1` should be 0.
     let d2 = x.len().saturating_sub(offset_end);
-    let d1 = cmp::min((align - offset_ptr) % align, d2);
+    if d1 > d2 {
+        // No space for anything aligned
+        return (x, &[], &[]);
+    }
 
     let (init, tail) = x.split_at(d2);
     let (init, mid) = init.split_at(d1);
     assert_eq!(mid.len() % align, 0);
+    assert_eq!(mid.as_ptr() as usize % mem::align_of::<Chunk>(), 0, "`mid` must be aligned");
     let mid = unsafe { slice::from_raw_parts(mid.as_ptr() as *const Chunk, mid.len() / align) };
 
     (init, mid, tail)
