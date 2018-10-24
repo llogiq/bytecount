@@ -13,11 +13,10 @@ environment:
           CHANNEL: nightly
         - TARGET: i686-pc-windows-gnu
           CHANNEL: nightly
-          FEATURES: "--features simd-accel"
+          FEATURES: "--features generic-simd"
         - TARGET: i686-pc-windows-gnu
           CHANNEL: nightly
-          FEATURES: "--features avx-accel"
-          RUSTFLAGS: "-C target-feature=+avx"
+          FEATURES: "--features generic-simd,runtime-dispatch-simd"
         - TARGET: i686-pc-windows-msvc
           CHANNEL: stable
         - TARGET: i686-pc-windows-msvc
@@ -26,11 +25,10 @@ environment:
           CHANNEL: nightly
         - TARGET: i686-pc-windows-msvc
           CHANNEL: nightly
-          FEATURES: "--features simd-accel"
+          FEATURES: "--features generic-simd"
         - TARGET: i686-pc-windows-msvc
           CHANNEL: nightly
-          FEATURES: "--features avx-accel"
-          RUSTFLAGS: "-C target-feature=+avx"
+          FEATURES: "--features generic-simd,runtime-dispatch-simd"
         - TARGET: x86_64-pc-windows-gnu
           CHANNEL: stable
         - TARGET: x86_64-pc-windows-gnu
@@ -39,11 +37,10 @@ environment:
           CHANNEL: nightly
         - TARGET: x86_64-pc-windows-gnu
           CHANNEL: nightly
-          FEATURES: "--features simd-accel"
+          FEATURES: "--features generic-simd"
         - TARGET: x86_64-pc-windows-gnu
           CHANNEL: nightly
-          FEATURES: "--features avx-accel"
-          RUSTFLAGS: "-C target-feature=+avx"
+          FEATURES: "--features generic-simd,runtime-dispatch-simd"
         - TARGET: x86_64-pc-windows-msvc
           CHANNEL: stable
         - TARGET: x86_64-pc-windows-msvc
@@ -52,11 +49,10 @@ environment:
           CHANNEL: nightly
         - TARGET: x86_64-pc-windows-msvc
           CHANNEL: nightly
-          FEATURES: "--features simd-accel"
+          FEATURES: "--features generic-simd"
         - TARGET: x86_64-pc-windows-msvc
           CHANNEL: nightly
-          FEATURES: "--features avx-accel"
-          RUSTFLAGS: "-C target-feature=+avx"
+          FEATURES: "--features generic-simd,runtime-dispatch-simd"
 
 install:
     - curl -sSf -o rustup-init.exe https://win.rustup.rs/
