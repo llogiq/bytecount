@@ -7,8 +7,8 @@ Counting bytes really fast
 [![Current Version](http://meritbadge.herokuapp.com/bytecount)](https://crates.io/crates/bytecount)
 [![License: Apache 2.0/MIT](https://img.shields.io/crates/l/bytecount.svg)](#license)
 
-This uses the "hyperscreamingcount" algorithm by Joshua Landau to count bytes faster than anything else. The
-[newlinebench](https://github.com/llogiq/newlinebench) repository has further benchmarks.
+This uses the "hyperscreamingcount" algorithm by Joshua Landau to count bytes faster than anything else.
+The [newlinebench](https://github.com/llogiq/newlinebench) repository has further benchmarks for old versions of this repository.
 
 To use bytecount in your crate, if you have [cargo-edit](https://github.com/killercup/cargo-edit), just type
 `cargo add bytecount` in a terminal with the crate root as the current path. Otherwise you can manually edit your
@@ -33,27 +33,36 @@ users to use them, add the following to your `Cargo.toml`:
 
 ```
 [features]
-avx-accel = ["bytecount/avx-accel"]
-simd-accel = ["bytecount/simd-accel"]
+runtime-dispatch-simd = ["bytecount/runtime-dispatch-simd"]
+generic-simd = ["bytecount/generic-simd"]
 ```
 
-Now your users can compile with SSE support (available on most modern x86_64 processors) using:
+The first, `runtime-dispatch-simd`, enables detection of SIMD capabilities at runtime, which allows using the SSE2 and
+AVX2 codepaths, but cannot be used with `no_std`.
+
+Your users can then compile with runtime dispacth using:
 
 ```
-cargo build --release --features simd-accel
+cargo build --release --features runtime-dispatch-simd
 ```
 
-Or even with AVX support (which likely requires compiling for the native target CPU):
+The second, `generic-simd`, uses `packed_simd` to provide a fast
+architecture-agnostic SIMD codepath, but requires running on nightly.
+
+Your users can compile with this codepath using:
 
 ```
-RUSTFLAGS="-C target-cpu=native" cargo build --release --features "simd-accel avx-accel"
+cargo build --release --features generic-simd
 ```
 
-The algorithm is explained in depth
-[here](https://llogiq.github.io/2016/09/27/count.html).
+Building for a more specific architecture will also improve performance.
+You can do this with
 
-Note that for very short slices, the data parallelism will likely not win much performance gains. In those cases, a naive
-count with a 32-bit counter may be a superior solution, unless counting *really* large byte slices.
+```
+RUSTFLAGS="-C target-cpu=native" cargo build --release
+```
+
+The scalar algorithm is explained in depth [here](https://llogiq.github.io/2016/09/27/count.html).
 
 ## License
 
