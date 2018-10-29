@@ -7,6 +7,7 @@ license = "Apache-2.0/MIT"
 repository = "https://github.com/llogiq/bytecount"
 categories = ["algorithms", "no-std"]
 readme = "README.md"
+exclude = ["/.travis.yml", "/appveyor.yml"]
 
 [badges]
 travis-ci = { repository = "llogiq/bytecount" }
