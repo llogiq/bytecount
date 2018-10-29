@@ -89,7 +89,7 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
         return integer_simd::chunk_count(haystack, needle);
     }
 
-    return naive_count(haystack, needle);
+    naive_count(haystack, needle)
 }
 
 /// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, fast
@@ -134,5 +134,5 @@ pub fn num_chars(utf8_chars: &[u8]) -> usize {
         return integer_simd::chunk_num_chars(utf8_chars);
     }
 
-    return naive_num_chars(utf8_chars);
+    naive_num_chars(utf8_chars)
 }
