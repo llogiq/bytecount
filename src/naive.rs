@@ -25,7 +25,7 @@ pub fn naive_count(utf8_chars: &[u8], needle: u8) -> usize {
     utf8_chars.iter().fold(0, |n, c| n + (*c == needle) as usize)
 }
 
-/// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, simple
+/// Count the number of UTF-8 encoded Unicode codepoints in a slice of bytes, simple
 ///
 /// This function is safe to use on any byte array, valid UTF-8 or not,
 /// but the output is only meaningful for well-formed UTF-8.
