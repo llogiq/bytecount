@@ -40,7 +40,7 @@ generic-simd = ["bytecount/generic-simd"]
 The first, `runtime-dispatch-simd`, enables detection of SIMD capabilities at runtime, which allows using the SSE2 and
 AVX2 codepaths, but cannot be used with `no_std`.
 
-Your users can then compile with runtime dispacth using:
+Your users can then compile with runtime dispatch using:
 
 ```
 cargo build --release --features runtime-dispatch-simd

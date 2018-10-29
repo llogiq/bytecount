@@ -92,7 +92,7 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
     return naive_count(haystack, needle);
 }
 
-/// Count the number of UTF-8 encoded unicode codepoints in a slice of bytes, fast
+/// Count the number of UTF-8 encoded Unicode codepoints in a slice of bytes, fast
 ///
 /// This function is safe to use on any byte array, valid UTF-8 or not,
 /// but the output is only meaningful for well-formed UTF-8.
