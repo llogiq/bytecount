@@ -43,7 +43,7 @@ pub fn chunk_count(haystack: &[u8], needle: u8) -> usize {
 
         // 16320
         while haystack.len() >= offset + 64 * 255 {
-            let mut counts = u8x64::splat(0);;
+            let mut counts = u8x64::splat(0);
             for _ in 0..255 {
                 counts -= u8x64::from_cast(u8x64_from_offset(haystack, offset).eq(needles_x64));
                 offset += 64;
@@ -53,7 +53,7 @@ pub fn chunk_count(haystack: &[u8], needle: u8) -> usize {
 
         // 8192
         if haystack.len() >= offset + 64 * 128 {
-            let mut counts = u8x64::splat(0);;
+            let mut counts = u8x64::splat(0);
             for _ in 0..128 {
                 counts -= u8x64::from_cast(u8x64_from_offset(haystack, offset).eq(needles_x64));
                 offset += 64;
