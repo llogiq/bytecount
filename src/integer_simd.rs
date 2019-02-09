@@ -68,7 +68,7 @@ pub fn chunk_count(haystack: &[u8], needle: u8) -> usize {
             counts += bytewise_equal(usize_load_unchecked(haystack, offset + i * chunksize), needles);
         }
         if haystack.len() % 8 != 0 {
-            let mask = !(!0 >> ((haystack.len() % chunksize) * 8));
+            let mask = usize::from_le(!(!0 >> ((haystack.len() % chunksize) * 8)));
             counts += bytewise_equal(usize_load_unchecked(haystack, haystack.len() - chunksize), needles) & mask;
         }
         count += sum_usize(counts);
@@ -101,7 +101,7 @@ pub fn chunk_num_chars(utf8_chars: &[u8]) -> usize {
             counts += is_leading_utf8_byte(usize_load_unchecked(utf8_chars, offset + i * chunksize));
         }
         if utf8_chars.len() % 8 != 0 {
-            let mask = !(!0 >> ((utf8_chars.len() % chunksize) * 8));
+            let mask = usize::from_le(!(!0 >> ((utf8_chars.len() % chunksize) * 8)));
             counts += is_leading_utf8_byte(usize_load_unchecked(utf8_chars, utf8_chars.len() - chunksize)) & mask;
         }
         count += sum_usize(counts);
