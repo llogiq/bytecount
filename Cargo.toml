@@ -1,8 +1,9 @@
 [package]
 authors = ["Andre Bogus <bogusandre@gmail.de>", "Joshua Landau <joshua@landau.ws>"]
 description = "count occurrences of a given byte, or the number of UTF-8 code points, in a byte slice, fast"
+edition = "2018"
 name = "bytecount"
-version = "0.5.1"
+version = "0.6.0"
 license = "Apache-2.0/MIT"
 repository = "https://github.com/llogiq/bytecount"
 categories = ["algorithms", "no-std"]
@@ -25,9 +26,9 @@ html_report = []
 packed_simd = { version = "0.3.1", optional = true }
 
 [dev-dependencies]
-quickcheck = "0.8"
-rand = "0.6"
-criterion = { version = "0.2.7", default-features = false }
+quickcheck = "0.9"
+rand = "0.7"
+criterion = { version = "0.3", default-features = false }
 
 [[bench]]
 name = "bench"
