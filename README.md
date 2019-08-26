@@ -64,8 +64,8 @@ RUSTFLAGS="-C target-cpu=native" cargo build --release
 
 The scalar algorithm is explained in depth [here](https://llogiq.github.io/2016/09/27/count.html).
 
-**Note: Versions until 0.4.0 worked with Rust as of 1.20.0. Version 0.5.0 and later requires Rust 1.26 or later,
-and at least 1.27.2 to use SIMD.**
+**Note: Versions until 0.4.0 worked with Rust as of 1.20.0. Version 0.5.0 until 0.6.0 requires Rust 1.26 or later,
+and at least 1.27.2 to use SIMD. Versions from 0.6.0 require Rust 1.32.0 or later.**
 
 ## License
 
