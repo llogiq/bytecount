@@ -33,7 +33,7 @@ fn check_count_large() {
 #[test]
 fn check_count_large_rand() {
     let haystack = random_bytes(100_000);
-    for i in (0..255).chain(iter::once(255)) {
+    for i in 0..=255 {
         assert_eq!(naive_count(&haystack, i), count(&haystack, i));
     }
 }
