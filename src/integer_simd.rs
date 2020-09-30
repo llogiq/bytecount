@@ -11,7 +11,7 @@ fn splat(byte: u8) -> usize {
 unsafe fn usize_load_unchecked(bytes: &[u8], offset: usize) -> usize {
     let mut output = 0;
     ptr::copy_nonoverlapping(
-        bytes.as_ptr().offset(offset as isize),
+        bytes.as_ptr().add(offset),
         &mut output as *mut usize as *mut u8,
         mem::size_of::<usize>()
     );

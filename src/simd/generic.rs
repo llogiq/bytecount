@@ -95,7 +95,7 @@ pub fn chunk_num_chars(utf8_chars: &[u8]) -> usize {
 
         // 16320
         while utf8_chars.len() >= offset + 64 * 255 {
-            let mut counts = u8x64::splat(0);;
+            let mut counts = u8x64::splat(0);
             for _ in 0..255 {
                 counts -= is_leading_utf8_byte_x64(u8x64_from_offset(utf8_chars, offset));
                 offset += 64;
@@ -105,7 +105,7 @@ pub fn chunk_num_chars(utf8_chars: &[u8]) -> usize {
 
         // 8192
         if utf8_chars.len() >= offset + 64 * 128 {
-            let mut counts = u8x64::splat(0);;
+            let mut counts = u8x64::splat(0);
             for _ in 0..128 {
                 counts -= is_leading_utf8_byte_x64(u8x64_from_offset(utf8_chars, offset));
                 offset += 64;
