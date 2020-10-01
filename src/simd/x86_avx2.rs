@@ -30,7 +30,7 @@ const MASK: [u8; 64] = [
 
 #[target_feature(enable = "avx2")]
 unsafe fn mm256_from_offset(slice: &[u8], offset: usize) -> __m256i {
-    _mm256_loadu_si256(slice.as_ptr().offset(offset as isize) as *const _)
+    _mm256_loadu_si256(slice.as_ptr().add(offset) as *const _)
 }
 
 #[target_feature(enable = "avx2")]
