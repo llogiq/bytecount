@@ -25,14 +25,14 @@ quickcheck! {
 
 #[test]
 fn check_count_large() {
-    let haystack = vec![0u8; 10_000_000];
+    let haystack = vec![0u8; if cfg!(miri) { 2_000 } else { 10_000_000 }];
     assert_eq!(naive_count(&haystack, 0), count(&haystack, 0));
     assert_eq!(naive_count(&haystack, 1), count(&haystack, 1));
 }
 
 #[test]
 fn check_count_large_rand() {
-    let haystack = random_bytes(100_000);
+    let haystack = random_bytes(if cfg!(miri) { 200 } else { 100_000 });
     for i in 0..=255 {
         assert_eq!(naive_count(&haystack, i), count(&haystack, i));
     }
@@ -60,7 +60,7 @@ quickcheck! {
 
 #[test]
 fn check_num_chars_large() {
-    let haystack = vec![0u8; 10_000_000];
+    let haystack = vec![0u8; if cfg!(miri) { 2_000 } else { 10_000_000 }];
     assert_eq!(naive_num_chars(&haystack), num_chars(&haystack));
     assert_eq!(naive_num_chars(&haystack), num_chars(&haystack));
 }
