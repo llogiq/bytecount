@@ -3,7 +3,6 @@ extern crate bytecount;
 extern crate quickcheck;
 extern crate rand;
 
-use std::iter;
 use bytecount::{
     count, naive_count,
     num_chars, naive_num_chars,
