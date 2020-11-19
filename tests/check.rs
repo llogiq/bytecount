@@ -3,7 +3,6 @@ extern crate bytecount;
 extern crate quickcheck;
 extern crate rand;
 
-use std::iter;
 use bytecount::{
     count, naive_count,
     num_chars, naive_num_chars,
@@ -33,7 +32,7 @@ fn check_count_large() {
 #[test]
 fn check_count_large_rand() {
     let haystack = random_bytes(if cfg!(miri) { 200 } else { 100_000 });
-    for i in (0..255).chain(iter::once(255)) {
+    for i in 0..=255 {
         assert_eq!(naive_count(&haystack, i), count(&haystack, i));
     }
 }
