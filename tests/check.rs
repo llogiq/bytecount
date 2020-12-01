@@ -51,6 +51,16 @@ fn check_count_overflow() {
     assert_eq!(count(&haystack, needle), naive_count(&haystack, needle));
 }
 
+#[test]
+fn check_count_overflow_many() {
+    let string = [b'x'; 20000];
+    for i in 0..20000 {
+        assert_eq!(count(&string[..i], b'x'), i);
+    }
+}
+
+
+
 quickcheck! {
     fn check_num_chars_correct(haystack: Vec<u8>) -> bool {
         num_chars(&haystack) == naive_num_chars(&haystack)
@@ -74,4 +84,12 @@ fn check_num_chars_some() {
 fn check_num_chars_overflow() {
     let haystack = vec![0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     assert_eq!(num_chars(&haystack), naive_num_chars(&haystack));
+}
+
+#[test]
+fn check_num_chars_overflow_many() {
+    let string = [b'x'; 20000];
+    for i in 0..20000 {
+        assert_eq!(num_chars(&string[..i]), i);
+    }
 }
