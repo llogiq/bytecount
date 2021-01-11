@@ -26,7 +26,7 @@ html_report = []
 packed_simd = { version = "0.3.4", package = "packed_simd_2", optional = true }
 
 [dev-dependencies]
-quickcheck = "0.9"
+quickcheck = "1.0"
 rand = "0.8"
 criterion = { version = "0.3", default-features = false }
 
