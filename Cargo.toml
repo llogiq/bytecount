@@ -20,7 +20,6 @@ bench = false
 [features]
 generic-simd = ["packed_simd"]
 runtime-dispatch-simd = []
-html_report = []
 
 [dependencies]
 packed_simd = { version = "0.3.4", package = "packed_simd_2", optional = true }
