@@ -4,7 +4,7 @@ Counting bytes really fast
 
 [![Build Status](https://travis-ci.org/llogiq/bytecount.svg?branch=master)](https://travis-ci.org/llogiq/bytecount)
 [![Windows build status](https://ci.appveyor.com/api/projects/status/github/llogiq/bytecount?svg=true)](https://ci.appveyor.com/project/llogiq/bytecount)
-[![Current Version](http://meritbadge.herokuapp.com/bytecount)](https://crates.io/crates/bytecount)
+[![Current Version](https://img.shields.io/crates/v/bytecount.svg)](https://crates.io/crates/bytecount)
 [![License: Apache 2.0/MIT](https://img.shields.io/crates/l/bytecount.svg)](#license)
 
 This uses the "hyperscreamingcount" algorithm by Joshua Landau to count bytes faster than anything else.
