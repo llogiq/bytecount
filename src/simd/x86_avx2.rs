@@ -2,13 +2,16 @@ use std::arch::x86_64::{
     __m256i,
     _mm256_and_si256,
     _mm256_cmpeq_epi8,
-    _mm256_extract_epi64,
+    _mm256_castsi256_si128,
+    _mm256_extracti128_si256,
     _mm256_loadu_si256,
     _mm256_sad_epu8,
     _mm256_set1_epi8,
     _mm256_setzero_si256,
     _mm256_sub_epi8,
     _mm256_xor_si256,
+    _mm_add_epi64,
+    _mm_extract_epi64,
 };
 
 #[target_feature(enable = "avx2")]
@@ -35,11 +38,11 @@ unsafe fn mm256_from_offset(slice: &[u8], offset: usize) -> __m256i {
 
 #[target_feature(enable = "avx2")]
 unsafe fn sum(u8s: &__m256i) -> usize {
-    let sums = _mm256_sad_epu8(*u8s, _mm256_setzero_si256());
-    (
-        _mm256_extract_epi64(sums, 0) + _mm256_extract_epi64(sums, 1) +
-        _mm256_extract_epi64(sums, 2) + _mm256_extract_epi64(sums, 3)
-    ) as usize
+    let sum_64x4 = _mm256_sad_epu8(*u8s, _mm256_setzero_si256());
+    let sum_64x2_lo = _mm256_castsi256_si128(sum_64x4);
+    let sum_64x2_hi = _mm256_extracti128_si256(sum_64x4, 1);
+    let sum_64x2 = _mm_add_epi64(sum_64x2_lo, sum_64x2_hi);
+    (_mm_extract_epi64(sum_64x2, 0) + _mm_extract_epi64(sum_64x2, 1)) as usize
 }
 
 #[target_feature(enable = "avx2")]
