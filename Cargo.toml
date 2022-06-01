@@ -23,7 +23,7 @@ runtime-dispatch-simd = []
 html_report = []
 
 [dependencies]
-packed_simd = { version = "0.3.4", package = "packed_simd_2", optional = true }
+packed_simd = { version = "0.3.8", package = "packed_simd_2", optional = true }
 
 [dev-dependencies]
 quickcheck = "1.0"
