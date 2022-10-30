@@ -47,7 +47,7 @@ jobs:
           args: --release
         env:
           RUST_LOG: debug
-        if: ${{ matrix.features == "default" }}
+        if: ${{ matrix.features == 'default' }}
       - name: Test (non-default)
         uses: actions-rs/cargo@v1.0.3
         with:
@@ -55,7 +55,7 @@ jobs:
           args: --release --features ${{ matrix.features }}
         env:
           RUST_LOG: debug
-        if: ${{ matrix.features != "default" }}
+        if: ${{ matrix.features != 'default' }}
       - name: bench
         uses: actions-rs/cargo@v1.0.3
         with:
