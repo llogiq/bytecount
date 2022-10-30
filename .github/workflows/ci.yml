@@ -34,12 +34,20 @@ jobs:
           override: true
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v1
-      - name: Install cargo-binstall
+      - name: Install cargo-binstall (linux)
         run: |
           curl --location --remote-name https://github.com/ryankurte/cargo-binstall/releases/download/v0.11.1/cargo-binstall-x86_64-unknown-linux-musl.tgz
           tar -zxvf cargo-binstall-x86_64-unknown-linux-musl.tgz
           mv cargo-binstall ~/.cargo/bin
           ls -l ~/.cargo/bin
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Install cargo-binstall (macos)
+        run: |
+          curl --location --remote-name https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-apple-darwin.zip
+          unzip cargo-binstall-x86_64-apple-darwin.zip
+          mv cargo-binstall ~/.cargo/bin
+          ls -l ~/.cargo/bin
+        if: ${{ matrix.os == 'macos-latest' }}        
       - name: Install "build all features"
         uses: actions-rs/cargo@v1.0.3
         with:
