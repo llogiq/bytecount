@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.32.0
+          #- 1.32.0
           - stable
           - beta
           - nightly
@@ -51,21 +51,16 @@ jobs:
         with:
           command: test
           args: --release
-        env:
-          RUST_LOG: debug
         if: ${{ matrix.features == 'default' }}
       - name: Test (non-default)
         uses: actions-rs/cargo@v1.0.3
         with:
           command: test
           args: --release --features ${{ matrix.features }}
-        env:
-          RUST_LOG: debug
         if: ${{ matrix.features != 'default' }}
       - name: bench
         uses: actions-rs/cargo@v1.0.3
         with:
           command: bench
         env:
-          RUST_LOG: debug
           COUNTS: 0,10,1000,100000,10000000
