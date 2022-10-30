@@ -22,11 +22,17 @@ jobs:
         arch:
           - i686
           - x86_64
+        features:
+          - default
+          - runtime-dispatch-simd
+        include:
+        - rust: nightly
+          features: generic-simd
     env:
       ARCH: ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1.0.7
         with:
           profile: minimal
@@ -34,35 +40,32 @@ jobs:
           override: true
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v1
-      - name: Install cargo-binstall (linux)
-        run: |
-          curl --location --remote-name https://github.com/ryankurte/cargo-binstall/releases/download/v0.11.1/cargo-binstall-x86_64-unknown-linux-musl.tgz
-          tar -zxvf cargo-binstall-x86_64-unknown-linux-musl.tgz
-          mv cargo-binstall ~/.cargo/bin
-          ls -l ~/.cargo/bin
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-      - name: Install cargo-binstall (macos)
-        run: |
-          curl --location --remote-name https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-apple-darwin.zip
-          unzip cargo-binstall-x86_64-apple-darwin.zip
-          mv cargo-binstall ~/.cargo/bin
-          ls -l ~/.cargo/bin
-        if: ${{ matrix.os == 'macos-latest' }}        
-      - name: Install "build all features"
+      - name: Build (default)
         uses: actions-rs/cargo@v1.0.3
         with:
-          command: binstall
-          args: cargo-all-features --no-confirm --version 1.7.0
-      - name: Build all features
+          command: build
+        if: ${ matrix.features == "default"}
+      - name: Build (non-default)
         uses: actions-rs/cargo@v1.0.3
         with:
-          command: build-all-features
-      - name: Test all features
+          command: build
+          args: --features ${{ matrix.features }}
+        if: ${ matrix.features != "default"}
+      - name: Test (default)
         uses: actions-rs/cargo@v1.0.3
         with:
-          command: test-all-features
+          command: test
         env:
           RUST_LOG: debug
+        if: ${ matrix.features == "default"}
+      - name: Test (non-default)
+        uses: actions-rs/cargo@v1.0.3
+        with:
+          command: test
+          args: --features ${{ matrix.features }}
+        env:
+          RUST_LOG: debug
+        if: ${ matrix.features != "default"}
       - name: bench
         uses: actions-rs/cargo@v1.0.3
         with:
