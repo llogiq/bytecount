@@ -55,7 +55,7 @@ jobs:
       - name: Build (1.32.0, non-default)
         uses: actions-rs/cargo@v1.0.3
         with:
-          command: test
+          command: build
           args: --release --features ${{ matrix.features }}
         if: ${{ matrix.features != 'default' && matrix.rust == '1.32.0' }}        
       - name: Test (default)
