@@ -45,7 +45,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
           components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - name: Test (default)
         uses: actions-rs/cargo@v1.0.3
         with:
