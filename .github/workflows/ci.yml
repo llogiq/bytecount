@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          #- 1.32.0
+          - 1.32.0
           - stable
           - beta
           - nightly
@@ -46,21 +46,34 @@ jobs:
           override: true
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
+      - name: Build (1.32.0, default)
+        uses: actions-rs/cargo@v1.0.3
+        with:
+          command: build
+          args: --release
+        if: ${{ matrix.features == 'default' && matrix.rust == '1.32.0' }}
+      - name: Build (1.32.0, non-default)
+        uses: actions-rs/cargo@v1.0.3
+        with:
+          command: test
+          args: --release --features ${{ matrix.features }}
+        if: ${{ matrix.features != 'default' && matrix.rust == '1.32.0' }}        
       - name: Test (default)
         uses: actions-rs/cargo@v1.0.3
         with:
           command: test
           args: --release
-        if: ${{ matrix.features == 'default' }}
+        if: ${{ matrix.features == 'default' && matrix.rust != '1.32.0' }}
       - name: Test (non-default)
         uses: actions-rs/cargo@v1.0.3
         with:
           command: test
           args: --release --features ${{ matrix.features }}
-        if: ${{ matrix.features != 'default' }}
+        if: ${{ matrix.features != 'default' && matrix.rust != '1.32.0' }}
       - name: bench
         uses: actions-rs/cargo@v1.0.3
         with:
           command: bench
         env:
           COUNTS: 0,10,1000,100000,10000000
+        if: ${{ matrix.rust != '1.32.0' }}
