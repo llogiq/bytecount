@@ -10,6 +10,3 @@ rustup component add miri
 # Run tests
 cargo miri test
 cargo miri test --target=mips64-unknown-linux-gnuabi64 # big-endian architecture
-
-# Restore old state in case Travis uses this cache for other jobs.
-rustup default nightly
