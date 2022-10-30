@@ -34,7 +34,6 @@ jobs:
           override: true
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v1
-      - name: Check formatting
       - name: Install cargo-binstall
         run: |
           curl --location --remote-name https://github.com/ryankurte/cargo-binstall/releases/download/v0.11.1/cargo-binstall-x86_64-unknown-linux-musl.tgz
