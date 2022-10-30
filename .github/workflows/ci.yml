@@ -25,9 +25,15 @@ jobs:
         features:
           - default
           - runtime-dispatch-simd
-        include:
-        - rust: nightly
+          - generic-simd
+        exclude:
+        - rust: 1.32.0
           features: generic-simd
+        - rust: stable
+          features: generic-simd
+        - rust: beta
+          features: generic-simd
+
     env:
       ARCH: ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
