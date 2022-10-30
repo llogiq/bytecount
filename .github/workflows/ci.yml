@@ -40,21 +40,11 @@ jobs:
           override: true
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v1
-      - name: Build (default)
-        uses: actions-rs/cargo@v1.0.3
-        with:
-          command: build
-        if: ${ matrix.features == "default"}
-      - name: Build (non-default)
-        uses: actions-rs/cargo@v1.0.3
-        with:
-          command: build
-          args: --features ${{ matrix.features }}
-        if: ${ matrix.features != "default"}
       - name: Test (default)
         uses: actions-rs/cargo@v1.0.3
         with:
           command: test
+          args: --release
         env:
           RUST_LOG: debug
         if: ${ matrix.features == "default"}
@@ -62,7 +52,7 @@ jobs:
         uses: actions-rs/cargo@v1.0.3
         with:
           command: test
-          args: --features ${{ matrix.features }}
+          args: --release --features ${{ matrix.features }}
         env:
           RUST_LOG: debug
         if: ${ matrix.features != "default"}
