@@ -13,7 +13,7 @@ unsafe fn usize_load_unchecked(bytes: &[u8], offset: usize) -> usize {
     ptr::copy_nonoverlapping(
         bytes.as_ptr().add(offset),
         &mut output as *mut usize as *mut u8,
-        mem::size_of::<usize>()
+        mem::size_of::<usize>(),
     );
     output
 }
@@ -65,11 +65,17 @@ pub fn chunk_count(haystack: &[u8], needle: u8) -> usize {
         // 8
         let mut counts = 0;
         for i in 0..(haystack.len() - offset) / chunksize {
-            counts += bytewise_equal(usize_load_unchecked(haystack, offset + i * chunksize), needles);
+            counts += bytewise_equal(
+                usize_load_unchecked(haystack, offset + i * chunksize),
+                needles,
+            );
         }
         if haystack.len() % 8 != 0 {
             let mask = usize::from_le(!(!0 >> ((haystack.len() % chunksize) * 8)));
-            counts += bytewise_equal(usize_load_unchecked(haystack, haystack.len() - chunksize), needles) & mask;
+            counts += bytewise_equal(
+                usize_load_unchecked(haystack, haystack.len() - chunksize),
+                needles,
+            ) & mask;
         }
         count += sum_usize(counts);
 
@@ -98,11 +104,15 @@ pub fn chunk_num_chars(utf8_chars: &[u8]) -> usize {
         // 8
         let mut counts = 0;
         for i in 0..(utf8_chars.len() - offset) / chunksize {
-            counts += is_leading_utf8_byte(usize_load_unchecked(utf8_chars, offset + i * chunksize));
+            counts +=
+                is_leading_utf8_byte(usize_load_unchecked(utf8_chars, offset + i * chunksize));
         }
         if utf8_chars.len() % 8 != 0 {
             let mask = usize::from_le(!(!0 >> ((utf8_chars.len() % chunksize) * 8)));
-            counts += is_leading_utf8_byte(usize_load_unchecked(utf8_chars, utf8_chars.len() - chunksize)) & mask;
+            counts += is_leading_utf8_byte(usize_load_unchecked(
+                utf8_chars,
+                utf8_chars.len() - chunksize,
+            )) & mask;
         }
         count += sum_usize(counts);
 

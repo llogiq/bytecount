@@ -1,14 +1,9 @@
-#[macro_use]
-extern crate criterion;
-extern crate bytecount;
-extern crate rand;
-
-use criterion::{Bencher, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, Bencher, BenchmarkId, Criterion};
 use rand::RngCore;
 use std::env;
 use std::time::Duration;
 
-use bytecount::{count, naive_count, naive_count_32, naive_num_chars, num_chars};
+use bytecount::{self, count, naive_count, naive_count_32, naive_num_chars, num_chars};
 
 fn random_bytes(len: usize) -> Vec<u8> {
     let mut result = vec![0; len];
