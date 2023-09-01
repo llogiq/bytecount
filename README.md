@@ -15,11 +15,11 @@ To use bytecount in your crate, if you have [cargo-edit](https://github.com/kill
 `Cargo.toml` to add `bytecount = 0.6.3` to your `[dependencies]` section.
 
 In your crate root (`lib.rs` or `main.rs`, depending on if you are writing a
-library or application), add `extern crate bytecount;`. Now you can simply use
+library or application), add `use bytecount;`. Now you can simply use
 `bytecount::count` as follows:
 
 ```Rust
-extern crate bytecount;
+use bytecount;
 
 fn main() {
     let mytext = "some potentially large text, perhaps read from disk?";
@@ -31,7 +31,7 @@ fn main() {
 bytecount supports two features to make use of modern CPU's features to speed up counting considerably. To allow your
 users to use them, add the following to your `Cargo.toml`:
 
-```
+```toml
 [features]
 runtime-dispatch-simd = ["bytecount/runtime-dispatch-simd"]
 generic-simd = ["bytecount/generic-simd"]

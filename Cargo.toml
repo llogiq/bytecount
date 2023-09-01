@@ -1,7 +1,10 @@
 [package]
-authors = ["Andre Bogus <bogusandre@gmail.de>", "Joshua Landau <joshua@landau.ws>"]
+authors = [
+    "Andre Bogus <bogusandre@gmail.de>",
+    "Joshua Landau <joshua@landau.ws>",
+]
 description = "count occurrences of a given byte, or the number of UTF-8 code points, in a byte slice, fast"
-edition = "2018"
+edition = "2021"
 name = "bytecount"
 version = "0.6.3"
 license = "Apache-2.0/MIT"
@@ -28,7 +31,7 @@ packed_simd = { version = "0.3.8", optional = true }
 [dev-dependencies]
 quickcheck = "1.0"
 rand = "0.8"
-criterion = { version = "0.4", default-features = false }
+criterion = { version = "0.5.1", default-features = false }
 
 [[bench]]
 name = "bench"

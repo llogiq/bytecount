@@ -22,7 +22,9 @@ pub fn naive_count_32(haystack: &[u8], needle: u8) -> usize {
 /// assert_eq!(number_of_spaces, 6);
 /// ```
 pub fn naive_count(utf8_chars: &[u8], needle: u8) -> usize {
-    utf8_chars.iter().fold(0, |n, c| n + (*c == needle) as usize)
+    utf8_chars
+        .iter()
+        .fold(0, |n, c| n + (*c == needle) as usize)
 }
 
 /// Count the number of UTF-8 encoded Unicode codepoints in a slice of bytes, simple
@@ -38,5 +40,8 @@ pub fn naive_count(utf8_chars: &[u8], needle: u8) -> usize {
 /// assert_eq!(char_count, 4);
 /// ```
 pub fn naive_num_chars(utf8_chars: &[u8]) -> usize {
-    utf8_chars.iter().filter(|&&byte| (byte >> 6) != 0b10).count()
+    utf8_chars
+        .iter()
+        .filter(|&&byte| (byte >> 6) != 0b10)
+        .count()
 }

@@ -1,29 +1,13 @@
 #[cfg(target_arch = "x86")]
 use std::arch::x86::{
-    __m128i,
-    _mm_and_si128,
-    _mm_cmpeq_epi8,
-    _mm_extract_epi32,
-    _mm_loadu_si128,
-    _mm_sad_epu8,
-    _mm_set1_epi8,
-    _mm_setzero_si128,
-    _mm_sub_epi8,
-    _mm_xor_si128,
+    __m128i, _mm_and_si128, _mm_cmpeq_epi8, _mm_extract_epi32, _mm_loadu_si128, _mm_sad_epu8,
+    _mm_set1_epi8, _mm_setzero_si128, _mm_sub_epi8, _mm_xor_si128,
 };
 
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::{
-    __m128i,
-    _mm_and_si128,
-    _mm_cmpeq_epi8,
-    _mm_extract_epi32,
-    _mm_loadu_si128,
-    _mm_sad_epu8,
-    _mm_set1_epi8,
-    _mm_setzero_si128,
-    _mm_sub_epi8,
-    _mm_xor_si128,
+    __m128i, _mm_and_si128, _mm_cmpeq_epi8, _mm_extract_epi32, _mm_loadu_si128, _mm_sad_epu8,
+    _mm_set1_epi8, _mm_setzero_si128, _mm_sub_epi8, _mm_xor_si128,
 };
 
 #[target_feature(enable = "sse2")]
@@ -37,8 +21,8 @@ pub unsafe fn mm_cmpneq_epi8(a: __m128i, b: __m128i) -> __m128i {
 }
 
 const MASK: [u8; 32] = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+    255, 255, 255, 255, 255, 255, 255,
 ];
 
 #[target_feature(enable = "sse2")]
@@ -67,7 +51,7 @@ pub unsafe fn chunk_count(haystack: &[u8], needle: u8) -> usize {
         for _ in 0..255 {
             counts = _mm_sub_epi8(
                 counts,
-                _mm_cmpeq_epi8(mm_from_offset(haystack, offset), needles)
+                _mm_cmpeq_epi8(mm_from_offset(haystack, offset), needles),
             );
             offset += 16;
         }
@@ -80,7 +64,7 @@ pub unsafe fn chunk_count(haystack: &[u8], needle: u8) -> usize {
         for _ in 0..128 {
             counts = _mm_sub_epi8(
                 counts,
-                _mm_cmpeq_epi8(mm_from_offset(haystack, offset), needles)
+                _mm_cmpeq_epi8(mm_from_offset(haystack, offset), needles),
             );
             offset += 16;
         }
@@ -92,7 +76,7 @@ pub unsafe fn chunk_count(haystack: &[u8], needle: u8) -> usize {
     for i in 0..(haystack.len() - offset) / 16 {
         counts = _mm_sub_epi8(
             counts,
-            _mm_cmpeq_epi8(mm_from_offset(haystack, offset + i * 16), needles)
+            _mm_cmpeq_epi8(mm_from_offset(haystack, offset + i * 16), needles),
         );
     }
     if haystack.len() % 16 != 0 {
@@ -100,8 +84,8 @@ pub unsafe fn chunk_count(haystack: &[u8], needle: u8) -> usize {
             counts,
             _mm_and_si128(
                 _mm_cmpeq_epi8(mm_from_offset(haystack, haystack.len() - 16), needles),
-                                  mm_from_offset(&MASK, haystack.len() % 16)
-            )
+                mm_from_offset(&MASK, haystack.len() % 16),
+            ),
         );
     }
     count += sum(&counts);
@@ -111,7 +95,10 @@ pub unsafe fn chunk_count(haystack: &[u8], needle: u8) -> usize {
 
 #[target_feature(enable = "sse2")]
 unsafe fn is_leading_utf8_byte(u8s: __m128i) -> __m128i {
-    mm_cmpneq_epi8(_mm_and_si128(u8s, _mm_set1_epu8(0b1100_0000)), _mm_set1_epu8(0b1000_0000))
+    mm_cmpneq_epi8(
+        _mm_and_si128(u8s, _mm_set1_epu8(0b1100_0000)),
+        _mm_set1_epu8(0b1000_0000),
+    )
 }
 
 #[target_feature(enable = "sse2")]
@@ -128,7 +115,7 @@ pub unsafe fn chunk_num_chars(utf8_chars: &[u8]) -> usize {
         for _ in 0..255 {
             counts = _mm_sub_epi8(
                 counts,
-                is_leading_utf8_byte(mm_from_offset(utf8_chars, offset))
+                is_leading_utf8_byte(mm_from_offset(utf8_chars, offset)),
             );
             offset += 16;
         }
@@ -141,7 +128,7 @@ pub unsafe fn chunk_num_chars(utf8_chars: &[u8]) -> usize {
         for _ in 0..128 {
             counts = _mm_sub_epi8(
                 counts,
-                is_leading_utf8_byte(mm_from_offset(utf8_chars, offset))
+                is_leading_utf8_byte(mm_from_offset(utf8_chars, offset)),
             );
             offset += 16;
         }
@@ -153,7 +140,7 @@ pub unsafe fn chunk_num_chars(utf8_chars: &[u8]) -> usize {
     for i in 0..(utf8_chars.len() - offset) / 16 {
         counts = _mm_sub_epi8(
             counts,
-            is_leading_utf8_byte(mm_from_offset(utf8_chars, offset + i * 16))
+            is_leading_utf8_byte(mm_from_offset(utf8_chars, offset + i * 16)),
         );
     }
     if utf8_chars.len() % 16 != 0 {
@@ -161,8 +148,8 @@ pub unsafe fn chunk_num_chars(utf8_chars: &[u8]) -> usize {
             counts,
             _mm_and_si128(
                 is_leading_utf8_byte(mm_from_offset(utf8_chars, utf8_chars.len() - 16)),
-                                     mm_from_offset(&MASK,      utf8_chars.len() % 16)
-            )
+                mm_from_offset(&MASK, utf8_chars.len() % 16),
+            ),
         );
     }
     count += sum(&counts);
