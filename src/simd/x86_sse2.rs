@@ -3,11 +3,12 @@ use std::arch::x86::{
     __m128i,
     _mm_and_si128,
     _mm_cmpeq_epi8,
-    _mm_extract_epi32,
+    _mm_cvtsi128_si32,
     _mm_loadu_si128,
     _mm_sad_epu8,
     _mm_set1_epi8,
     _mm_setzero_si128,
+    _mm_shuffle_epi32,
     _mm_sub_epi8,
     _mm_xor_si128,
 };
@@ -17,11 +18,12 @@ use std::arch::x86_64::{
     __m128i,
     _mm_and_si128,
     _mm_cmpeq_epi8,
-    _mm_extract_epi32,
+    _mm_cvtsi128_si32,
     _mm_loadu_si128,
     _mm_sad_epu8,
     _mm_set1_epi8,
     _mm_setzero_si128,
+    _mm_shuffle_epi32,
     _mm_sub_epi8,
     _mm_xor_si128,
 };
@@ -49,7 +51,7 @@ unsafe fn mm_from_offset(slice: &[u8], offset: usize) -> __m128i {
 #[target_feature(enable = "sse2")]
 unsafe fn sum(u8s: &__m128i) -> usize {
     let sums = _mm_sad_epu8(*u8s, _mm_setzero_si128());
-    (_mm_extract_epi32(sums, 0) + _mm_extract_epi32(sums, 2)) as usize
+    (_mm_cvtsi128_si32(sums) + _mm_cvtsi128_si32(_mm_shuffle_epi32(sums, 0xaa))) as usize
 }
 
 #[target_feature(enable = "sse2")]
