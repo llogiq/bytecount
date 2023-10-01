@@ -32,7 +32,6 @@
 //! still on small strings.
 
 #![deny(missing_docs)]
-
 #![cfg_attr(not(feature = "runtime-dispatch-simd"), no_std)]
 
 #[cfg(not(feature = "runtime-dispatch-simd"))]
@@ -45,7 +44,11 @@ pub use naive::*;
 mod integer_simd;
 
 #[cfg(any(
-    all(feature = "runtime-dispatch-simd", any(target_arch = "x86", target_arch = "x86_64")),
+    all(
+        feature = "runtime-dispatch-simd",
+        any(target_arch = "x86", target_arch = "x86_64")
+    ),
+    target_arch = "aarch64",
     feature = "generic-simd"
 ))]
 mod simd;
@@ -64,7 +67,9 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
         #[cfg(all(feature = "runtime-dispatch-simd", target_arch = "x86_64"))]
         {
             if is_x86_feature_detected!("avx2") {
-                unsafe { return simd::x86_avx2::chunk_count(haystack, needle); }
+                unsafe {
+                    return simd::x86_avx2::chunk_count(haystack, needle);
+                }
             }
         }
 
@@ -80,7 +85,15 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
         ))]
         {
             if is_x86_feature_detected!("sse2") {
-                unsafe { return simd::x86_sse2::chunk_count(haystack, needle); }
+                unsafe {
+                    return simd::x86_sse2::chunk_count(haystack, needle);
+                }
+            }
+        }
+        #[cfg(all(target_arch = "aarch64", not(feature = "generic_simd")))]
+        {
+            unsafe {
+                return simd::aarch64::chunk_count(haystack, needle);
             }
         }
     }
@@ -109,7 +122,9 @@ pub fn num_chars(utf8_chars: &[u8]) -> usize {
         #[cfg(all(feature = "runtime-dispatch-simd", target_arch = "x86_64"))]
         {
             if is_x86_feature_detected!("avx2") {
-                unsafe { return simd::x86_avx2::chunk_num_chars(utf8_chars); }
+                unsafe {
+                    return simd::x86_avx2::chunk_num_chars(utf8_chars);
+                }
             }
         }
 
@@ -125,7 +140,15 @@ pub fn num_chars(utf8_chars: &[u8]) -> usize {
         ))]
         {
             if is_x86_feature_detected!("sse2") {
-                unsafe { return simd::x86_sse2::chunk_num_chars(utf8_chars); }
+                unsafe {
+                    return simd::x86_sse2::chunk_num_chars(utf8_chars);
+                }
+            }
+        }
+        #[cfg(all(target_arch = "aarch64", not(feature = "generic_simd")))]
+        {
+            unsafe {
+                return simd::aarch64::chunk_num_chars(utf8_chars);
             }
         }
     }

@@ -15,3 +15,7 @@ pub mod x86_sse2;
 // Runtime feature detection is not available with no_std.
 #[cfg(all(feature = "runtime-dispatch-simd", target_arch = "x86_64"))]
 pub mod x86_avx2;
+
+/// Modern ARM machines are also quite capable thanks to NEON
+#[cfg(target_arch = "aarch64")]
+pub mod aarch64;

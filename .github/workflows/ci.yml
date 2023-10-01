@@ -22,6 +22,7 @@ jobs:
         arch:
           - i686
           - x86_64
+          - aarch64
         features:
           - default
           - runtime-dispatch-simd

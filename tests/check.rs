@@ -3,10 +3,7 @@ extern crate bytecount;
 extern crate quickcheck;
 extern crate rand;
 
-use bytecount::{
-    count, naive_count,
-    num_chars, naive_num_chars,
-};
+use bytecount::{count, naive_count, naive_num_chars, num_chars};
 use rand::RngCore;
 
 fn random_bytes(len: usize) -> Vec<u8> {
@@ -58,8 +55,6 @@ fn check_count_overflow_many() {
         assert_eq!(count(&string[..i], b'x'), i);
     }
 }
-
-
 
 quickcheck! {
     fn check_num_chars_correct(haystack: Vec<u8>) -> bool {
