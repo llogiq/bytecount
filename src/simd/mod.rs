@@ -19,3 +19,6 @@ pub mod x86_avx2;
 /// Modern ARM machines are also quite capable thanks to NEON
 #[cfg(target_arch = "aarch64")]
 pub mod aarch64;
+
+#[cfg(target_arch = "wasm32")]
+pub mod wasm;
