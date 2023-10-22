@@ -49,6 +49,7 @@ mod integer_simd;
         any(target_arch = "x86", target_arch = "x86_64")
     ),
     target_arch = "aarch64",
+    target_arch = "wasm32",
     feature = "generic-simd"
 ))]
 mod simd;
@@ -94,6 +95,13 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
         {
             unsafe {
                 return simd::aarch64::chunk_count(haystack, needle);
+            }
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            unsafe {
+                return simd::wasm::chunk_count(haystack, needle);
             }
         }
     }
@@ -149,6 +157,13 @@ pub fn num_chars(utf8_chars: &[u8]) -> usize {
         {
             unsafe {
                 return simd::aarch64::chunk_num_chars(utf8_chars);
+            }
+        }
+
+        #[cfg(target_arch = "wasm32")]
+        {
+            unsafe {
+                return simd::wasm::chunk_num_chars(utf8_chars);
             }
         }
     }
