@@ -12,7 +12,7 @@ The [newlinebench](https://github.com/llogiq/newlinebench) repository has furthe
 
 To use bytecount in your crate, if you have [cargo-edit](https://github.com/killercup/cargo-edit), just type
 `cargo add bytecount` in a terminal with the crate root as the current path. Otherwise you can manually edit your
-`Cargo.toml` to add `bytecount = 0.6.6` to your `[dependencies]` section.
+`Cargo.toml` to add `bytecount = 0.6.7` to your `[dependencies]` section.
 
 In your crate root (`lib.rs` or `main.rs`, depending on if you are writing a
 library or application), add `extern crate bytecount;`. Now you can simply use

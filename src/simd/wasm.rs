@@ -39,10 +39,10 @@ unsafe fn sum(u8s: v128) -> usize {
     let u16s = u16x8_extadd_pairwise_u8x16(u8s);
     let u32s = u32x4_extadd_pairwise_u16x8(u16s);
     let (u1, u2, u3, u4) = (
+        u32x4_extract_lane::<0>(u32s),
         u32x4_extract_lane::<1>(u32s),
         u32x4_extract_lane::<2>(u32s),
         u32x4_extract_lane::<3>(u32s),
-        u32x4_extract_lane::<4>(u32s),
     );
     ((u1 + u2) + (u3 + u4)) as usize
 }
