@@ -51,15 +51,21 @@ unsafe fn sum(u8s: v128) -> usize {
 unsafe fn sum4(u1: v128, u2: v128, u3: v128, u4: v128) -> usize {
     // sum < (2^2 * 2^3 * 2^8 = 2^13) < 2^16, therefore no overflow here
     let u16s = u16x8_add(
-        u16x8_add(u16x8_extadd_pairwise_u8x16(u1), u16x8_extadd_pairwise_u8x16(u2)),
-        u16x8_add(u16x8_extadd_pairwise_u8x16(u3), u16x8_extadd_pairwise_u8x16(u4)),
+        u16x8_add(
+            u16x8_extadd_pairwise_u8x16(u1),
+            u16x8_extadd_pairwise_u8x16(u2),
+        ),
+        u16x8_add(
+            u16x8_extadd_pairwise_u8x16(u3),
+            u16x8_extadd_pairwise_u8x16(u4),
+        ),
     );
     let u32s = u32x4_extadd_pairwise_u16x8(u16s);
     let (u1, u2, u3, u4) = (
+        u32x4_extract_lane::<0>(u32s),
         u32x4_extract_lane::<1>(u32s),
         u32x4_extract_lane::<2>(u32s),
         u32x4_extract_lane::<3>(u32s),
-        u32x4_extract_lane::<4>(u32s),
     );
     ((u1 + u2) + (u3 + u4)) as usize
 }
@@ -69,10 +75,14 @@ pub unsafe fn chunk_count(haystack: &[u8], needle: u8) -> usize {
     let needles = u8x16_splat(needle);
     let mut count = 0;
     let mut offset = 0;
-    
+
     while haystack.len() >= offset + 16 * 255 {
-        let (mut count1, mut count2, mut count3, mut count4) =
-            (u8x16_splat(0), u8x16_splat(0), u8x16_splat(0), u8x16_splat(0));
+        let (mut count1, mut count2, mut count3, mut count4) = (
+            u8x16_splat(0),
+            u8x16_splat(0),
+            u8x16_splat(0),
+            u8x16_splat(0),
+        );
         for _ in 0..255 {
             let (h1, h2, h3, h4) = u8x16x4_from_offset(haystack, offset);
             count1 = u8x16_sub(count1, u8x16_eq(h1, needles));
@@ -83,10 +93,14 @@ pub unsafe fn chunk_count(haystack: &[u8], needle: u8) -> usize {
         }
         count += sum4(count1, count2, count3, count4);
     }
-    
+
     // 64
-    let (mut count1, mut count2, mut count3, mut count4) =
-    (u8x16_splat(0), u8x16_splat(0), u8x16_splat(0), u8x16_splat(0));
+    let (mut count1, mut count2, mut count3, mut count4) = (
+        u8x16_splat(0),
+        u8x16_splat(0),
+        u8x16_splat(0),
+        u8x16_splat(0),
+    );
     for _ in 0..(haystack.len() - offset) / 64 {
         let (h1, h2, h3, h4) = u8x16x4_from_offset(haystack, offset);
         count1 = u8x16_sub(count1, u8x16_eq(h1, needles));
@@ -114,7 +128,7 @@ pub unsafe fn chunk_count(haystack: &[u8], needle: u8) -> usize {
             ),
         );
     }
-    count + sum(counts)   
+    count + sum(counts)
 }
 
 #[target_feature(enable = "simd128")]
@@ -134,23 +148,31 @@ pub unsafe fn chunk_num_chars(utf8_chars: &[u8]) -> usize {
 
     // 4080
     while utf8_chars.len() >= offset + 64 * 255 {
-        let (mut count1, mut count2, mut count3, mut count4) =
-            (u8x16_splat(0), u8x16_splat(0), u8x16_splat(0), u8x16_splat(0));
+        let (mut count1, mut count2, mut count3, mut count4) = (
+            u8x16_splat(0),
+            u8x16_splat(0),
+            u8x16_splat(0),
+            u8x16_splat(0),
+        );
 
         for _ in 0..255 {
             let (h1, h2, h3, h4) = u8x16x4_from_offset(utf8_chars, offset);
-            count1 = u8x16_sub(count1,is_leading_utf8_byte(h1));
-            count2 = u8x16_sub(count2,is_leading_utf8_byte(h2));
-            count3 = u8x16_sub(count3,is_leading_utf8_byte(h3));
-            count4 = u8x16_sub(count4,is_leading_utf8_byte(h4));
+            count1 = u8x16_sub(count1, is_leading_utf8_byte(h1));
+            count2 = u8x16_sub(count2, is_leading_utf8_byte(h2));
+            count3 = u8x16_sub(count3, is_leading_utf8_byte(h3));
+            count4 = u8x16_sub(count4, is_leading_utf8_byte(h4));
             offset += 64;
         }
         count += sum4(count1, count2, count3, count4);
     }
 
     // 4080
-    let (mut count1, mut count2, mut count3, mut count4) =
-        (u8x16_splat(0), u8x16_splat(0), u8x16_splat(0), u8x16_splat(0));
+    let (mut count1, mut count2, mut count3, mut count4) = (
+        u8x16_splat(0),
+        u8x16_splat(0),
+        u8x16_splat(0),
+        u8x16_splat(0),
+    );
     for _ in 0..(utf8_chars.len() - offset) / 64 {
         let (h1, h2, h3, h4) = u8x16x4_from_offset(utf8_chars, offset);
         count1 = u8x16_sub(count1, is_leading_utf8_byte(h1));
