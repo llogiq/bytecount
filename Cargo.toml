@@ -18,12 +18,11 @@ appveyor = { repository = "llogiq/bytecount" }
 bench = false
 
 [features]
-generic-simd = ["packed_simd"]
+generic-simd = []
 runtime-dispatch-simd = []
 html_report = []
 
 [dependencies]
-packed_simd = { version = "0.3.8", optional = true }
 
 [dev-dependencies]
 quickcheck = "1.0"
