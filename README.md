@@ -46,7 +46,7 @@ Your users can then compile with runtime dispatch using:
 cargo build --release --features runtime-dispatch-simd
 ```
 
-The second, `generic-simd`, uses `packed_simd` to provide a fast
+The second, `generic-simd`, uses [`std::simd`](https://doc.rust-lang.org/std/simd/index.html) and [`#![feature(portable_simd)]`](https://github.com/rust-lang/rust/issues/86656) to provide a fast
 architecture-agnostic SIMD codepath, but requires running on nightly.
 
 Your users can compile with this codepath using:
