@@ -31,6 +31,8 @@
 //! [`naive_count_32`](fn.naive_count_32.html) method can be faster
 //! still on small strings.
 
+#![cfg_attr(feature = "generic-simd", feature(portable_simd))]
+
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "runtime-dispatch-simd"), no_std)]
 
