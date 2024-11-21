@@ -54,7 +54,10 @@ mod integer_simd;
         target_arch = "aarch64",
         target_endian = "little"
     ),
-    target_arch = "wasm32",
+    all(
+        target_arch = "wasm32",
+        target_feature = "simd128"
+    ),
     feature = "generic-simd"
 ))]
 mod simd;
@@ -99,7 +102,7 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
         #[cfg(all(
             target_arch = "aarch64", 
             target_endian = "little",
-            not(feature = "generic_simd")
+            not(feature = "generic-simd")
         ))]
         {
             unsafe {
@@ -107,7 +110,10 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
             }
         }
 
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(
+            target_arch = "wasm32",
+            target_feature = "simd128"
+        ))]
         {
             unsafe {
                 return simd::wasm::chunk_count(haystack, needle);
@@ -165,7 +171,7 @@ pub fn num_chars(utf8_chars: &[u8]) -> usize {
         #[cfg(all(
             target_arch = "aarch64",
             target_endian = "little",
-            not(feature = "generic_simd")
+            not(feature = "generic-simd")
         ))]
         {
             unsafe {
@@ -173,7 +179,10 @@ pub fn num_chars(utf8_chars: &[u8]) -> usize {
             }
         }
 
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(
+            target_arch = "wasm32",
+            target_feature = "simd128"
+        ))]
         {
             unsafe {
                 return simd::wasm::chunk_num_chars(utf8_chars);
