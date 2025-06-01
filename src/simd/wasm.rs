@@ -16,6 +16,8 @@ unsafe fn u8x16_from_offset(slice: &[u8], offset: usize) -> v128 {
     v128_load(slice.as_ptr().add(offset) as *const _)
 }
 
+// Load four 16-byte vectors from a slice at a given offset.
+// This function assumes that the slice has at least 64 bytes available from the offset.
 #[target_feature(enable = "simd128")]
 unsafe fn u8x16x4_from_offset(slice: &[u8], offset: usize) -> (v128, v128, v128, v128) {
     debug_assert!(
@@ -76,7 +78,7 @@ pub unsafe fn chunk_count(haystack: &[u8], needle: u8) -> usize {
     let mut count = 0;
     let mut offset = 0;
 
-    while haystack.len() >= offset + 16 * 255 {
+    while haystack.len() >= offset + 64 * 255 {
         let (mut count1, mut count2, mut count3, mut count4) = (
             u8x16_splat(0),
             u8x16_splat(0),
