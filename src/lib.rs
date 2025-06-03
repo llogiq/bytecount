@@ -32,7 +32,6 @@
 //! still on small strings.
 
 #![cfg_attr(feature = "generic-simd", feature(portable_simd))]
-
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "runtime-dispatch-simd"), no_std)]
 
@@ -50,10 +49,7 @@ mod integer_simd;
         feature = "runtime-dispatch-simd",
         any(target_arch = "x86", target_arch = "x86_64")
     ),
-    all(
-        target_arch = "aarch64",
-        target_endian = "little"
-    ),
+    all(target_arch = "aarch64", target_endian = "little"),
     target_arch = "wasm32",
     feature = "generic-simd"
 ))]
@@ -97,9 +93,9 @@ pub fn count(haystack: &[u8], needle: u8) -> usize {
             }
         }
         #[cfg(all(
-            target_arch = "aarch64", 
+            target_arch = "aarch64",
             target_endian = "little",
-            not(feature = "generic_simd")
+            not(feature = "generic-simd")
         ))]
         {
             unsafe {
@@ -165,7 +161,7 @@ pub fn num_chars(utf8_chars: &[u8]) -> usize {
         #[cfg(all(
             target_arch = "aarch64",
             target_endian = "little",
-            not(feature = "generic_simd")
+            not(feature = "generic-simd")
         ))]
         {
             unsafe {
