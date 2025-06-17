@@ -27,7 +27,7 @@ html_report = []
 [dev-dependencies]
 quickcheck = "1.0"
 rand = "0.8"
-criterion = { version = "0.4", default-features = false }
+criterion = { version = "0.5", default-features = false }
 
 [[bench]]
 name = "bench"
